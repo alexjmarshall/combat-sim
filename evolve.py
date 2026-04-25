@@ -13,6 +13,8 @@ def evaluate(strat, opps, n=3, hd=COMBATANT_DICE, track=False):
     mc = defaultdict(int)
     commits = defaultdict(list)
     turns = []
+    hit_damages = []
+    bout_max_damages = []
     for opp in opps:
         for _ in range(n):
             w, t, s = run_combat(strat, opp, hd_a=hd, hd_b=hd, track_stats=track)
@@ -29,8 +31,10 @@ def evaluate(strat, opps, n=3, hd=COMBATANT_DICE, track=False):
                 for k, v in s['commits_by_maneuver'].items():
                     commits[k].extend(v)
                 turns.append(t)
+                hit_damages.extend(s['hit_damages'])
+                bout_max_damages.append(s['bout_max_damage'])
     total = wins + losses + draws
-    return (wins + 0.5*draws)/max(1, total), mc, te, commits, turns
+    return (wins + 0.5*draws)/max(1, total), mc, te, commits, turns, hit_damages, bout_max_damages
 
 
 def tournament(pf, k=5):
@@ -43,7 +47,7 @@ def evolve(pop_size=60, gens=40, games=3, opps_n=10, hd=COMBATANT_DICE, mut=0.06
         pf = []
         for s in pop:
             opps = random.sample(pop, min(opps_n, len(pop) - 1))
-            wr, _, _, _, _ = evaluate(s, opps, n=games, hd=hd)
+            wr, _, _, _, _, _, _ = evaluate(s, opps, n=games, hd=hd)
             pf.append((s, wr))
         pf.sort(key=lambda x: x[1], reverse=True)
         
@@ -72,8 +76,8 @@ def evolve(pop_size=60, gens=40, games=3, opps_n=10, hd=COMBATANT_DICE, mut=0.06
     finals = []
     for s in pop:
         opps = random.sample(pop, min(20, len(pop)))
-        wr, mc, te, commits, turns = evaluate(s, opps, n=15, hd=hd, track=True)
-        finals.append((s, wr, mc, te, commits, turns))
+        wr, mc, te, commits, turns, hit_damages, bout_max_damages = evaluate(s, opps, n=15, hd=hd, track=True)
+        finals.append((s, wr, mc, te, commits, turns, hit_damages, bout_max_damages))
     finals.sort(key=lambda x: x[1], reverse=True)
     return finals
 
@@ -87,32 +91,38 @@ def report(finals, label=""):
     te = 0
     all_commits = defaultdict(list)
     all_turns = []
-    for s, wr, mc, tc, commits, turns in finals[:10]:
+    all_hit_damages = []
+    all_bout_max_damages = []
+    for s, wr, mc, tc, commits, turns, hit_damages, bout_max_damages in finals[:10]:
         te += tc
         for k, v in mc.items():
             totals[k] += v
         for k, v in commits.items():
             all_commits[k].extend(v)
         all_turns.extend(turns)
+        all_hit_damages.extend(hit_damages)
+        all_bout_max_damages.extend(bout_max_damages)
     
     print(f"\nManeuver distribution ({te} exchanges, top 10):")
-    for k in ['SA_vs_P', 'SA_vs_C', 'SA_vs_D',
-              'F_vs_P', 'F_vs_C', 'F_vs_D',
-              'D_vs_P', 'D_vs_C', 'D_vs_D',
-              'DA_vs_P', 'DA_vs_C', 'DA_vs_D']:
+    for k in ['SA_vs_P', 'SA_vs_C', 'SA_vs_D', 'SA_vs_X',
+              'F_vs_P', 'F_vs_C', 'F_vs_D', 'F_vs_X',
+              'D_vs_P', 'D_vs_C', 'D_vs_D', 'D_vs_X',
+              'DA_vs_P', 'DA_vs_C', 'DA_vs_D', 'DA_vs_X']:
         print(f"  {k}: {totals[k]/max(1,te)*100:5.1f}%")
 
-    sa_t = totals['SA_vs_P'] + totals['SA_vs_C'] + totals['SA_vs_D']
-    f_t = totals['F_vs_P'] + totals['F_vs_C'] + totals['F_vs_D']
-    d_atk_t = totals['D_vs_P'] + totals['D_vs_C'] + totals['D_vs_D']
-    da_t = totals['DA_vs_P'] + totals['DA_vs_C'] + totals['DA_vs_D']
+    sa_t = totals['SA_vs_P'] + totals['SA_vs_C'] + totals['SA_vs_D'] + totals['SA_vs_X']
+    f_t = totals['F_vs_P'] + totals['F_vs_C'] + totals['F_vs_D'] + totals['F_vs_X']
+    d_atk_t = totals['D_vs_P'] + totals['D_vs_C'] + totals['D_vs_D'] + totals['D_vs_X']
+    da_t = totals['DA_vs_P'] + totals['DA_vs_C'] + totals['DA_vs_D'] + totals['DA_vs_X']
     p_t = totals['SA_vs_P'] + totals['F_vs_P'] + totals['D_vs_P'] + totals['DA_vs_P']
     c_t = totals['SA_vs_C'] + totals['F_vs_C'] + totals['D_vs_C'] + totals['DA_vs_C']
     d_def_t = totals['SA_vs_D'] + totals['F_vs_D'] + totals['D_vs_D'] + totals['DA_vs_D']
+    x_t = totals['SA_vs_X'] + totals['F_vs_X'] + totals['D_vs_X'] + totals['DA_vs_X']
     tm = max(1, te)
     print(f"\nMarginals:")
     print(f"  Attacker: SA {sa_t/tm*100:.1f}% | Feint {f_t/tm*100:.1f}% | Dodge {d_atk_t/tm*100:.1f}% | DA {da_t/tm*100:.1f}%")
-    print(f"  Defender: Parry {p_t/tm*100:.1f}% | Counter {c_t/tm*100:.1f}% | Dodge {d_def_t/tm*100:.1f}%")
+    print(f"  Defender: Parry {p_t/tm*100:.1f}% | Counter {c_t/tm*100:.1f}% | "
+          f"Dodge {d_def_t/tm*100:.1f}% | Defenseless {x_t/tm*100:.1f}%")
 
     print(f"\nAvg commits:")
     for k in ['SA', 'F', 'P', 'C', 'D', 'DR', 'DA', 'DA_BONUS', 'EA']:
@@ -122,7 +132,11 @@ def report(finals, label=""):
     if all_turns:
         print(f"\nPace: {statistics.mean(all_turns):.2f} turns/combat, {te/len(all_turns):.2f} exchanges/combat")
 
-    s, wr, _, _, _, _ = finals[0]
+    if all_hit_damages:
+        print(f"  Damage: median hit={statistics.median(all_hit_damages):.1f}, "
+              f"median bout max={statistics.median(all_bout_max_damages):.1f}")
+
+    s, wr, _, _, _, _, _, _ = finals[0]
     print(f"\nTop strategy (win rate {wr:.3f}):")
     print(f"  feint_p={s.feint_prob:.2%} sa_c={s.sa_commit_frac:.2%} f_c={s.feint_commit_frac:.2%}")
     print(f"  fu_P={s.feint_followup_vs_parry_frac:.2%} fu_C={s.feint_followup_vs_counter_frac:.2%}")

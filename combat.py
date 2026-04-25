@@ -23,6 +23,7 @@ class Maneuver(Enum):
     FEINT = "Feint"
     DODGE = "Dodge"
     DECEPTIVE_ATTACK = "DeceptiveAttack"
+    DEFENSELESS = "Defenseless"
 
 
 @dataclass
@@ -50,6 +51,13 @@ class CombatantState:
     
     def clear_exchange_to_used(self):
         self.used += self.exchange
+        self.exchange = 0
+
+    def parry_clear_exchange(self, successes):
+        """After a parry, spend only the successful dice; return the rest to reserve."""
+        dice_spent = min(successes, self.exchange)
+        self.used += dice_spent
+        self.reserve += self.exchange - dice_spent
         self.exchange = 0
     
     def apply_damage_default(self, damage):
@@ -181,6 +189,9 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
     attacker.commit(atk_commit)
     defender.commit(def_commit)
 
+    if def_maneuver == Maneuver.DEFENSELESS:
+        def_maneuver = Maneuver.PARRY
+
     if atk_maneuver == Maneuver.DECEPTIVE_ATTACK and DECEPTIVE_ATTACK:
         bonus = max(0, min(atk_bonus, attacker.reserve // 2))
         attacker.reserve -= 2 * bonus
@@ -203,7 +214,7 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
             damage = max(0, atk_successes - def_successes) + min(WEAPON_BONUS, atk_rolled) - ARMOR_BONUS
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
-            defender.clear_exchange_to_used()
+            defender.parry_clear_exchange(def_successes)
             if RIPOSTE:
                 riposte_damage = max(0, def_successes - atk_successes) + min(WEAPON_BONUS, def_rolled) - ARMOR_BONUS
                 if riposte_damage > 0:

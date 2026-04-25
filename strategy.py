@@ -6,7 +6,7 @@ from combat import Maneuver, CombatantState, resolve_exchange, WEAPON_BONUS, DEC
 
 REFRESH_START_OF_TURN = True
 REFRESH_END_OF_TURN = False
-COMBATANT_DICE = 10
+COMBATANT_DICE = 5
 INITIATIVE_LOSER_PENALTY = 0.5  # fraction of dice the initiative loser starts with (1.0 = no penalty)
 
 @dataclass
@@ -203,6 +203,7 @@ _LETTER = {
     Maneuver.PARRY: 'P',
     Maneuver.COUNTER: 'C',
     Maneuver.DECEPTIVE_ATTACK: 'DA',
+    Maneuver.DEFENSELESS: 'X',
 }
 
 
@@ -226,7 +227,7 @@ def choose_attack(strat, attacker):
 
 def choose_defense(strat, defender, atk_commit):
     if defender.reserve <= 0:
-        return Maneuver.PARRY, 0
+        return Maneuver.DEFENSELESS, 0
     commit_ratio = atk_commit / max(1, defender.reserve)
     is_low = commit_ratio < strat.commit_ratio_threshold
     if is_low:
@@ -283,16 +284,18 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
     
     stats = {
         'maneuvers': {
-            'SA_vs_P': 0, 'SA_vs_C': 0, 'SA_vs_D': 0,
-            'F_vs_P': 0, 'F_vs_C': 0, 'F_vs_D': 0,
-            'D_vs_P': 0, 'D_vs_C': 0, 'D_vs_D': 0,
-            'DA_vs_P': 0, 'DA_vs_C': 0, 'DA_vs_D': 0,
+            'SA_vs_P': 0, 'SA_vs_C': 0, 'SA_vs_D': 0, 'SA_vs_X': 0,
+            'F_vs_P': 0, 'F_vs_C': 0, 'F_vs_D': 0, 'F_vs_X': 0,
+            'D_vs_P': 0, 'D_vs_C': 0, 'D_vs_D': 0, 'D_vs_X': 0,
+            'DA_vs_P': 0, 'DA_vs_C': 0, 'DA_vs_D': 0, 'DA_vs_X': 0,
         },
         'total_exchanges': 0,
         'initiative_winner': initiative,
         'commits_by_maneuver': {'SA': [], 'F': [], 'P': [], 'C': [], 'D': [], 'DR': [],
                                 'DA': [], 'DA_BONUS': [], 'EA': []},
         'exchanges_per_turn': [],
+        'hit_damages': [],
+        'bout_max_damage': 0,
     }
     
     turns = 0
@@ -395,6 +398,12 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
                                       atk_bonus=atk_bonus,
                                       atk_evasive_commit=atk_evasive,
                                       def_evasive_commit=def_evasive)
+            if track_stats:
+                for dmg in (result.attacker_damage_taken, result.defender_damage_taken):
+                    if dmg > 0:
+                        stats['hit_damages'].append(dmg)
+                        if dmg > stats['bout_max_damage']:
+                            stats['bout_max_damage'] = dmg
             exchanges_this_turn += 1
 
             if atk_state.total_hd <= 0:
