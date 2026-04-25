@@ -2,11 +2,12 @@
 
 import random
 from dataclasses import dataclass
-from combat import Maneuver, CombatantState, resolve_exchange, WEAPON_BONUS, DECEPTIVE_ATTACK as DECEPTIVE_ATTACK_ENABLED
+import combat
+from combat import Maneuver, CombatantState, resolve_exchange, DECEPTIVE_ATTACK as DECEPTIVE_ATTACK_ENABLED
 
 REFRESH_START_OF_TURN = True
 REFRESH_END_OF_TURN = False
-COMBATANT_DICE = 5
+COMBATANT_DICE = 10
 INITIATIVE_LOSER_PENALTY = 0.5  # fraction of dice the initiative loser starts with (1.0 = no penalty)
 
 @dataclass
@@ -292,7 +293,7 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         'total_exchanges': 0,
         'initiative_winner': initiative,
         'commits_by_maneuver': {'SA': [], 'F': [], 'P': [], 'C': [], 'D': [], 'DR': [],
-                                'DA': [], 'DA_BONUS': [], 'EA': []},
+                                'DA': [], 'DA_BONUS': [], 'EA': [], 'HELD': []},
         'exchanges_per_turn': [],
         'hit_damages': [],
         'bout_max_damage': 0,
@@ -354,16 +355,17 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
 
             atk_evasive = 0
             def_evasive = 0
-            if am == Maneuver.DODGE and dm == Maneuver.COUNTER:
-                atk_dodger_reserve = max(0, atk_reserve_after - atk_fu)
-                atk_evasive = _int_commit(atk_strat.evasive_atk_frac, atk_dodger_reserve, min_val=0)
-            if dm == Maneuver.DODGE and am in (Maneuver.SIMPLE_ATTACK,
-                                               Maneuver.DECEPTIVE_ATTACK,
-                                               Maneuver.FEINT):
-                def_dodger_reserve = max(0, def_reserve_after - def_fu)
-                ev_frac = (def_strat.evasive_vs_low_frac if is_low_threat
-                           else def_strat.evasive_vs_high_frac)
-                def_evasive = _int_commit(ev_frac, def_dodger_reserve, min_val=0)
+            if combat.EVASIVE_ATTACK:
+                if am == Maneuver.DODGE and dm == Maneuver.COUNTER:
+                    atk_dodger_reserve = max(0, atk_reserve_after - atk_fu)
+                    atk_evasive = _int_commit(atk_strat.evasive_atk_frac, atk_dodger_reserve, min_val=0)
+                if dm == Maneuver.DODGE and am in (Maneuver.SIMPLE_ATTACK,
+                                                   Maneuver.DECEPTIVE_ATTACK,
+                                                   Maneuver.FEINT):
+                    def_dodger_reserve = max(0, def_reserve_after - def_fu)
+                    ev_frac = (def_strat.evasive_vs_low_frac if is_low_threat
+                               else def_strat.evasive_vs_high_frac)
+                    def_evasive = _int_commit(ev_frac, def_dodger_reserve, min_val=0)
 
             if track_stats:
                 stats['total_exchanges'] += 1
@@ -420,7 +422,8 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         
         if track_stats:
             stats['exchanges_per_turn'].append(exchanges_this_turn)
-        
+            stats['commits_by_maneuver']['HELD'].append(atk_state.reserve)
+
         attacker_idx = 1 - attacker_idx
     
     if state_a.total_hd > state_b.total_hd:

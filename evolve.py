@@ -125,7 +125,7 @@ def report(finals, label=""):
           f"Dodge {d_def_t/tm*100:.1f}% | Defenseless {x_t/tm*100:.1f}%")
 
     print(f"\nAvg commits:")
-    for k in ['SA', 'F', 'P', 'C', 'D', 'DR', 'DA', 'DA_BONUS', 'EA']:
+    for k in ['SA', 'F', 'P', 'C', 'D', 'DR', 'DA', 'DA_BONUS', 'EA', 'HELD']:
         if all_commits[k]:
             print(f"  {k}: {statistics.mean(all_commits[k]):.2f} (median {statistics.median(all_commits[k]):.1f})")
 
