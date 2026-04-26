@@ -15,6 +15,7 @@ def evaluate(strat, opps, n=3, hd=COMBATANT_DICE, track=False):
     turns = []
     hit_damages = []
     bout_max_damages = []
+    first_blood_losses = first_blood_total = 0
     for opp in opps:
         for _ in range(n):
             w, t, s = run_combat(strat, opp, hd_a=hd, hd_b=hd, track_stats=track)
@@ -33,8 +34,13 @@ def evaluate(strat, opps, n=3, hd=COMBATANT_DICE, track=False):
                 turns.append(t)
                 hit_damages.extend(s['hit_damages'])
                 bout_max_damages.append(s['bout_max_damage'])
+                if s['first_blood_loser'] is not None and w in (0, 1):
+                    first_blood_total += 1
+                    if s['first_blood_loser'] != w:
+                        first_blood_losses += 1
     total = wins + losses + draws
-    return (wins + 0.5*draws)/max(1, total), mc, te, commits, turns, hit_damages, bout_max_damages
+    first_blood_loser_rate = first_blood_losses / max(1, first_blood_total)
+    return (wins + 0.5*draws)/max(1, total), mc, te, commits, turns, hit_damages, bout_max_damages, first_blood_loser_rate
 
 
 def tournament(pf, k=5):
@@ -47,7 +53,7 @@ def evolve(pop_size=60, gens=40, games=3, opps_n=10, hd=COMBATANT_DICE, mut=0.06
         pf = []
         for s in pop:
             opps = random.sample(pop, min(opps_n, len(pop) - 1))
-            wr, _, _, _, _, _, _ = evaluate(s, opps, n=games, hd=hd)
+            wr, *_ = evaluate(s, opps, n=games, hd=hd)
             pf.append((s, wr))
         pf.sort(key=lambda x: x[1], reverse=True)
         
@@ -76,8 +82,8 @@ def evolve(pop_size=60, gens=40, games=3, opps_n=10, hd=COMBATANT_DICE, mut=0.06
     finals = []
     for s in pop:
         opps = random.sample(pop, min(20, len(pop)))
-        wr, mc, te, commits, turns, hit_damages, bout_max_damages = evaluate(s, opps, n=15, hd=hd, track=True)
-        finals.append((s, wr, mc, te, commits, turns, hit_damages, bout_max_damages))
+        wr, mc, te, commits, turns, hit_damages, bout_max_damages, fbr = evaluate(s, opps, n=15, hd=hd, track=True)
+        finals.append((s, wr, mc, te, commits, turns, hit_damages, bout_max_damages, fbr))
     finals.sort(key=lambda x: x[1], reverse=True)
     return finals
 
@@ -93,7 +99,8 @@ def report(finals, label=""):
     all_turns = []
     all_hit_damages = []
     all_bout_max_damages = []
-    for s, wr, mc, tc, commits, turns, hit_damages, bout_max_damages in finals[:10]:
+    all_fbr = []
+    for s, wr, mc, tc, commits, turns, hit_damages, bout_max_damages, fbr in finals[:10]:
         te += tc
         for k, v in mc.items():
             totals[k] += v
@@ -102,7 +109,8 @@ def report(finals, label=""):
         all_turns.extend(turns)
         all_hit_damages.extend(hit_damages)
         all_bout_max_damages.extend(bout_max_damages)
-    
+        all_fbr.append(fbr)
+
     print(f"\nManeuver distribution ({te} exchanges, top 10):")
     for k in ['SA_vs_P', 'SA_vs_C', 'SA_vs_D', 'SA_vs_X',
               'F_vs_P', 'F_vs_C', 'F_vs_D', 'F_vs_X',
@@ -125,7 +133,7 @@ def report(finals, label=""):
           f"Dodge {d_def_t/tm*100:.1f}% | Defenseless {x_t/tm*100:.1f}%")
 
     print(f"\nAvg commits:")
-    for k in ['SA', 'F', 'P', 'C', 'D', 'DR', 'DA', 'DA_BONUS', 'EA', 'HELD']:
+    for k in ['SA', 'F', 'P', 'C', 'D', 'DR', 'DA', 'DA_BONUS', 'EA', 'HELD', 'HELD1']:
         if all_commits[k]:
             print(f"  {k}: {statistics.mean(all_commits[k]):.2f} (median {statistics.median(all_commits[k]):.1f})")
 
@@ -135,8 +143,11 @@ def report(finals, label=""):
     if all_hit_damages:
         print(f"  Damage: median hit={statistics.median(all_hit_damages):.1f}, "
               f"median bout max={statistics.median(all_bout_max_damages):.1f}")
+    if all_fbr:
+        print(f"Death spiral: first-blood loser rate={statistics.mean(all_fbr):.1%} "
+              f"(50%=none, 100%=instant)")
 
-    s, wr, _, _, _, _, _, _ = finals[0]
+    s, wr, *_ = finals[0]
     print(f"\nTop strategy (win rate {wr:.3f}):")
     print(f"  feint_p={s.feint_prob:.2%} sa_c={s.sa_commit_frac:.2%} f_c={s.feint_commit_frac:.2%}")
     print(f"  fu_P={s.feint_followup_vs_parry_frac:.2%} fu_C={s.feint_followup_vs_counter_frac:.2%}")

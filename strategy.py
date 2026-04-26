@@ -293,10 +293,11 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         'total_exchanges': 0,
         'initiative_winner': initiative,
         'commits_by_maneuver': {'SA': [], 'F': [], 'P': [], 'C': [], 'D': [], 'DR': [],
-                                'DA': [], 'DA_BONUS': [], 'EA': [], 'HELD': []},
+                                'DA': [], 'DA_BONUS': [], 'EA': [], 'HELD': [], 'HELD1': []},
         'exchanges_per_turn': [],
         'hit_damages': [],
         'bout_max_damage': 0,
+        'first_blood_loser': None,
     }
     
     turns = 0
@@ -310,9 +311,9 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         def_strat = strats[def_idx]
         
         if REFRESH_START_OF_TURN:
-            atk_state.refresh()
+            atk_state.carryover_refresh()
         if REFRESH_END_OF_TURN:
-            def_state.refresh()
+            def_state.carryover_refresh()
 
         exchanges_this_turn = 0
         while True:
@@ -401,11 +402,14 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
                                       atk_evasive_commit=atk_evasive,
                                       def_evasive_commit=def_evasive)
             if track_stats:
-                for dmg in (result.attacker_damage_taken, result.defender_damage_taken):
+                for dmg, loser_idx in ((result.attacker_damage_taken, atk_idx),
+                                       (result.defender_damage_taken, def_idx)):
                     if dmg > 0:
                         stats['hit_damages'].append(dmg)
                         if dmg > stats['bout_max_damage']:
                             stats['bout_max_damage'] = dmg
+                        if stats['first_blood_loser'] is None:
+                            stats['first_blood_loser'] = loser_idx
             exchanges_this_turn += 1
 
             if atk_state.total_hd <= 0:
@@ -423,6 +427,8 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         if track_stats:
             stats['exchanges_per_turn'].append(exchanges_this_turn)
             stats['commits_by_maneuver']['HELD'].append(atk_state.reserve)
+            if turns == 1:
+                stats['commits_by_maneuver']['HELD1'].append(atk_state.reserve)
 
         attacker_idx = 1 - attacker_idx
     

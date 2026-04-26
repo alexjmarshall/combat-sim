@@ -1,5 +1,9 @@
 """
-V4 combat rules. Substantial rewrite aimed at making mixing emerge.
+Sequential game combat rules. Independent copy of combat.py — tweak freely without
+affecting the simultaneous game simulator.
+
+Key difference from combat.py: feint followup is capped to def_commit (line ~255),
+restoring the rule that was commented out in the original.
 """
 
 import random
@@ -53,7 +57,7 @@ class CombatantState:
         self.reserve -= dice
         self.exchange += dice
         return dice
-    
+
     def clear_exchange_to_used(self):
         self.used += self.exchange
         self.exchange = 0
@@ -64,7 +68,7 @@ class CombatantState:
         self.used += dice_spent
         self.reserve += self.exchange - dice_spent
         self.exchange = 0
-    
+
     def apply_damage_default(self, damage):
         remaining = damage
         applied = 0
@@ -97,7 +101,6 @@ def roll_successes(num_dice):
 class ExchangeResult:
     attacker_damage_taken: int = 0
     defender_damage_taken: int = 0
-
 
 
 def _evasive_attack(dodger, target, evasive_commit):
@@ -253,8 +256,8 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
 
     elif atk_maneuver == Maneuver.FEINT:
         attacker.clear_exchange_to_used()
-        max_followup = 100 #def_commit  # follow-up cannot exceed def commit
-                
+        max_followup = def_commit  # followup capped to defender's initial commit
+
         if def_maneuver == Maneuver.PARRY:
             defender.clear_exchange_to_used()
             followup = min(atk_followup_commit, attacker.reserve, max_followup)
@@ -283,5 +286,5 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
                 result.defender_damage_taken = defender.apply_damage_default(dmg)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
-    
+
     return result
