@@ -11,9 +11,8 @@ RIPOSTE = False
 STOP_HIT = False          # Counter deals extra damage equal to attacker's successes when it wins
 DECEPTIVE_ATTACK = False  # Attacker may pump bonus dice into exchange at 2-for-1 reserve cost
 EVASIVE_ATTACK = False    # Successful dodger makes a free unopposed attack from remaining reserve
-EFFICIENT_PARRY = False    # Parry only spends successful dice; unused dice return to reserve
 
-WEAPON_BONUS = 2  # Max damage bonus for attacker; scales +1 per die committed up to this cap
+WEAPON_BONUS = 3  # Max damage bonus for attacker; scales +1 per die committed up to this cap
 ARMOR_BONUS = 2   # Extra successes for defender on each exchange
 
 
@@ -127,9 +126,6 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
     # Pairings with no incoming damage either way.
     if atk_maneuver == Maneuver.DODGE and def_maneuver in (Maneuver.DODGE, Maneuver.PARRY):
         if def_maneuver == Maneuver.PARRY:
-            if EFFICIENT_PARRY:
-                defender.parry_clear_exchange(0)  # attacker dodged; parrier spends nothing
-            else:
                 defender.clear_exchange_to_used()
         return result
     if def_maneuver == Maneuver.DODGE and atk_maneuver == Maneuver.DODGE:
@@ -226,10 +222,7 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
                 damage = 0
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
-            if EFFICIENT_PARRY:
-                defender.parry_clear_exchange(def_successes)
-            else:
-                defender.clear_exchange_to_used()
+            defender.clear_exchange_to_used()
             if RIPOSTE and def_successes > atk_successes:
                 riposte_damage = max(0, (def_successes - atk_successes) + min(WEAPON_BONUS, def_rolled) - ARMOR_BONUS)
                 if riposte_damage > 0:
