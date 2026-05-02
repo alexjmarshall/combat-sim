@@ -311,9 +311,9 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
         def_strat = strats[def_idx]
         
         if REFRESH_START_OF_TURN:
-            atk_state.carryover_refresh()
+            atk_state.refresh()
         if REFRESH_END_OF_TURN:
-            def_state.carryover_refresh()
+            def_state.refresh()
 
         exchanges_this_turn = 0
         while True:
