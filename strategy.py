@@ -1,5 +1,6 @@
 """V4 strategy."""
 
+import math
 import random
 from dataclasses import dataclass
 import combat
@@ -281,7 +282,7 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
     initiative = random.randint(0, 1)
     attacker_idx = initiative
     loser = states[1 - initiative]
-    loser.reserve = int(loser.reserve * INITIATIVE_LOSER_PENALTY)
+    loser.reserve = math.ceil(loser.reserve * INITIATIVE_LOSER_PENALTY)
     
     stats = {
         'maneuvers': {

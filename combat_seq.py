@@ -15,10 +15,10 @@ RIPOSTE = False
 STOP_HIT = False          # Counter deals extra damage equal to attacker's successes when it wins
 DECEPTIVE_ATTACK = False  # Attacker may pump bonus dice into exchange at 2-for-1 reserve cost
 EVASIVE_ATTACK = False    # Successful dodger makes a free unopposed attack from remaining reserve
-EFFICIENT_PARRY = True    # Parry only spends successful dice; unused dice return to reserve
+EFFICIENT_PARRY = False    # Parry only spends successful dice; unused dice return to reserve
 
-WEAPON_BONUS = 0  # Max damage bonus for attacker; scales +1 per die committed up to this cap
-ARMOR_BONUS = 0   # Extra successes for defender on each exchange
+WEAPON_BONUS = 2  # Max damage bonus for attacker; scales +1 per die committed up to this cap
+ARMOR_BONUS = 2   # Extra successes for defender on each exchange
 
 
 class Maneuver(Enum):

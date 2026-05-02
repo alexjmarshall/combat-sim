@@ -6,6 +6,7 @@ observed defense (threshold-based), not a probabilistic blind choice. The attack
 is still chosen blind, before the defense is announced.
 """
 
+import math
 import random
 from dataclasses import dataclass
 from combat_seq import Maneuver, CombatantState, resolve_exchange
@@ -232,7 +233,7 @@ def run_combat_sequential(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_
     initiative = random.randint(0, 1)
     attacker_idx = initiative
     loser = states[1 - initiative]
-    loser.reserve = int(loser.reserve * INITIATIVE_LOSER_PENALTY)
+    loser.reserve = math.ceil(loser.reserve * INITIATIVE_LOSER_PENALTY)
 
     stats = {
         'total_exchanges': 0,

@@ -13,7 +13,7 @@ DECEPTIVE_ATTACK = False  # Attacker may pump bonus dice into exchange at 2-for-
 EVASIVE_ATTACK = False    # Successful dodger makes a free unopposed attack from remaining reserve
 EFFICIENT_PARRY = False    # Parry only spends successful dice; unused dice return to reserve
 
-WEAPON_BONUS = 3  # Max damage bonus for attacker; scales +1 per die committed up to this cap
+WEAPON_BONUS = 2  # Max damage bonus for attacker; scales +1 per die committed up to this cap
 ARMOR_BONUS = 2   # Extra successes for defender on each exchange
 
 
