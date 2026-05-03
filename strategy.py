@@ -8,8 +8,9 @@ from combat import Maneuver, CombatantState, resolve_exchange, DECEPTIVE_ATTACK 
 
 REFRESH_START_OF_TURN = True
 REFRESH_END_OF_TURN = False
-COMBATANT_DICE = 10
+COMBATANT_DICE = 15
 INITIATIVE_LOSER_PENALTY = 0.5  # fraction of dice the initiative loser starts with (1.0 = no penalty)
+END_TURN_ON_ATTACKER_DAMAGE = True  # if True, attacker's turn ends immediately on taking any damage
 
 @dataclass
 class Strategy:
@@ -422,6 +423,8 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
                     stats['exchanges_per_turn'].append(exchanges_this_turn)
                 return (atk_idx, turns, stats)
             
+            if END_TURN_ON_ATTACKER_DAMAGE and result.attacker_damage_taken > 0:
+                break
             if not decide_continue(atk_strat, result, atk_state):
                 break
         
