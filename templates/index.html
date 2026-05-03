@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Brigandine Combat Playtester</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Brigandine Combat Playtester</h1>
+    <div class="header-actions">
+      <button id="toggle-settings">Settings</button>
+      <button id="new-game">New Game</button>
+    </div>
+  </header>
+
+  <section id="settings-panel" class="hidden">
+    <h2>Settings</h2>
+    <form id="settings-form">
+      <div class="grid">
+        <label>WEAPON_BONUS
+          <input type="number" name="weapon_bonus" min="0" max="10" step="1">
+        </label>
+        <label>ARMOR_BONUS
+          <input type="number" name="armor_bonus" min="0" max="10" step="1">
+        </label>
+        <label>COMBATANT_DICE
+          <input type="number" name="combatant_dice" min="1" max="40" step="1">
+        </label>
+        <label>INITIATIVE_LOSER_PENALTY
+          <input type="number" name="initiative_loser_penalty" min="0" max="1" step="0.05">
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" name="refresh_start_of_turn">
+          REFRESH_START_OF_TURN
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" name="refresh_end_of_turn">
+          REFRESH_END_OF_TURN
+        </label>
+        <label>Human role
+          <select name="human_role">
+            <option value="random">Random</option>
+            <option value="attacker">Always attacker first</option>
+            <option value="defender">Always defender first</option>
+          </select>
+        </label>
+        <label>AI difficulty
+          <select name="ai_difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+      </div>
+      <button type="submit">Save settings</button>
+      <p class="hint">Settings lock in when you start a new game.</p>
+    </form>
+  </section>
+
+  <main id="game-panel" class="hidden">
+    <div class="combatants">
+      <div class="combatant" id="combatant-0">
+        <h2 class="combatant-name"></h2>
+        <div class="role-badge"></div>
+        <div class="hd-bar"><div class="hd-segments"></div></div>
+        <div class="hd-numbers"></div>
+      </div>
+      <div class="combatant" id="combatant-1">
+        <h2 class="combatant-name"></h2>
+        <div class="role-badge"></div>
+        <div class="hd-bar"><div class="hd-segments"></div></div>
+        <div class="hd-numbers"></div>
+      </div>
+    </div>
+
+    <div id="status-line"></div>
+
+    <div id="reveal-panel" class="hidden"></div>
+
+    <div id="action-panel"></div>
+
+    <details id="log-wrap" open>
+      <summary>Combat log</summary>
+      <div id="log"></div>
+    </details>
+  </main>
+
+  <div id="game-over-banner" class="hidden"></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

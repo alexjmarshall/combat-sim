@@ -85,6 +85,16 @@ def roll_successes(num_dice):
 class ExchangeResult:
     attacker_damage_taken: int = 0
     defender_damage_taken: int = 0
+    # Optional instrumentation for UI/log fidelity. Populated by resolve_exchange when relevant.
+    atk_rolled: int = 0
+    def_rolled: int = 0
+    atk_successes: int = 0
+    def_successes: int = 0
+    followup_rolled: int = 0
+    followup_successes: int = 0
+    dodge_rolled: int = 0
+    dodge_successes: int = 0
+    dodge_succeeded: bool = False
 
 
 
@@ -121,15 +131,21 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
 
     # SA / DA (atk) vs Dodge (def)
     if atk_maneuver in (Maneuver.SIMPLE_ATTACK, Maneuver.DECEPTIVE_ATTACK) and def_maneuver == Maneuver.DODGE:
+        result.atk_rolled = attacker.exchange
         atk_successes = roll_successes(attacker.exchange)
+        result.atk_successes = atk_successes
         defender.commit(def_followup_commit)
+        result.dodge_rolled = defender.exchange
         dodge_roll = roll_successes(defender.exchange)
+        result.dodge_successes = dodge_roll
+        atk_dice_for_bonus = attacker.exchange
         if dodge_roll >= max(1, ARMOR_BONUS):
+            result.dodge_succeeded = True
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
             result.attacker_damage_taken += _evasive_attack(defender, attacker, def_evasive_commit)
         else:
-            damage = max(0, atk_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if atk_successes > 0 else 0
+            damage = max(0, atk_successes + min(WEAPON_BONUS, atk_dice_for_bonus) - ARMOR_BONUS) if atk_successes > 0 else 0
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
@@ -138,14 +154,20 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
     # Counter (def) vs Dodge (atk)
     if atk_maneuver == Maneuver.DODGE and def_maneuver == Maneuver.COUNTER:
         attacker.commit(atk_followup_commit)
+        result.dodge_rolled = attacker.exchange
         dodge_roll = roll_successes(attacker.exchange)
+        result.dodge_successes = dodge_roll
+        result.def_rolled = def_commit
         def_successes = roll_successes(def_commit)
+        result.def_successes = def_successes
+        def_dice_for_bonus = defender.exchange
         if dodge_roll >= max(1, ARMOR_BONUS):
+            result.dodge_succeeded = True
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
             result.defender_damage_taken += _evasive_attack(attacker, defender, atk_evasive_commit)
         else:
-            damage = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS) if def_successes > 0 else 0
+            damage = max(0, def_successes + min(WEAPON_BONUS, def_dice_for_bonus) - ARMOR_BONUS) if def_successes > 0 else 0
             result.attacker_damage_taken = attacker.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
@@ -156,15 +178,21 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
         attacker.clear_exchange_to_used()
         followup = min(atk_followup_commit, attacker.reserve)
         attacker.commit(followup)
+        result.followup_rolled = followup
         followup_successes = roll_successes(followup)
+        result.followup_successes = followup_successes
         defender.commit(def_followup_commit)
+        result.dodge_rolled = defender.exchange
         dodge_roll = roll_successes(defender.exchange)
+        result.dodge_successes = dodge_roll
+        atk_dice_for_bonus = attacker.exchange
         if dodge_roll >= max(1, ARMOR_BONUS):
+            result.dodge_succeeded = True
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
             result.attacker_damage_taken += _evasive_attack(defender, attacker, def_evasive_commit)
         else:
-            damage = max(0, followup_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if followup_successes > 0 else 0
+            damage = max(0, followup_successes + min(WEAPON_BONUS, atk_dice_for_bonus) - ARMOR_BONUS) if followup_successes > 0 else 0
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
@@ -200,10 +228,14 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
     if atk_maneuver in (Maneuver.SIMPLE_ATTACK, Maneuver.DECEPTIVE_ATTACK):
         atk_rolled = attacker.exchange
         atk_successes = roll_successes(atk_rolled)
+        result.atk_rolled = atk_rolled
+        result.atk_successes = atk_successes
 
         if def_maneuver == Maneuver.PARRY:
             def_rolled = defender.exchange
             def_successes = roll_successes(def_rolled)
+            result.def_rolled = def_rolled
+            result.def_successes = def_successes
             if atk_successes > def_successes:
                 damage = max(0, (atk_successes - def_successes) + min(WEAPON_BONUS, atk_rolled) - ARMOR_BONUS)
             else:
@@ -227,7 +259,10 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
                 applied_atk_dmg += defender.apply_damage_default(remaining_atk_dmg)
             result.defender_damage_taken = applied_atk_dmg
             if defender.total_hd > 0 and defender.exchange > 0:
-                def_successes = roll_successes(defender.exchange)
+                def_rolled = defender.exchange
+                def_successes = roll_successes(def_rolled)
+                result.def_rolled = def_rolled
+                result.def_successes = def_successes
                 stop_hit_bonus = atk_successes if (STOP_HIT and def_successes >= atk_successes) else 0
                 counter_dmg = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS + stop_hit_bonus) if def_successes > 0 else 0
                 result.attacker_damage_taken = attacker.apply_damage_default(counter_dmg)
@@ -237,13 +272,15 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
     elif atk_maneuver == Maneuver.FEINT:
         attacker.clear_exchange_to_used()
         max_followup = actual_def_commit  # follow-up cannot exceed def commit
-                
+
         if def_maneuver == Maneuver.PARRY:
             defender.clear_exchange_to_used()
             followup = min(atk_followup_commit, attacker.reserve, max_followup)
             if followup > 0:
                 attacker.commit(followup)
+                result.followup_rolled = followup
                 followup_successes = roll_successes(followup)
+                result.followup_successes = followup_successes
                 damage = max(0, followup_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if followup_successes > 0 else 0
                 result.defender_damage_taken = defender.apply_damage_default(damage)
                 attacker.clear_exchange_to_used()
@@ -251,7 +288,11 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
         elif def_maneuver == Maneuver.COUNTER:
             followup = min(atk_followup_commit, attacker.reserve, max_followup)
             attacker.commit(followup)
+            result.followup_rolled = followup
+            def_rolled = def_commit
             def_successes = roll_successes(def_commit)
+            result.def_rolled = def_rolled
+            result.def_successes = def_successes
             total_counter_dmg = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS) if def_successes > 0 else 0
             dmg_to_exchange = min(total_counter_dmg, attacker.exchange)
             attacker.exchange -= dmg_to_exchange
@@ -263,9 +304,10 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
             result.attacker_damage_taken = applied_counter_dmg
             if attacker.total_hd > 0 and attacker.exchange > 0:
                 fu_successes = roll_successes(attacker.exchange)
+                result.followup_successes = fu_successes
                 dmg = max(0, fu_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if fu_successes > 0 else 0
                 result.defender_damage_taken = defender.apply_damage_default(dmg)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
-    
+
     return result
