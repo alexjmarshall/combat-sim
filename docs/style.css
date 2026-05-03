@@ -1,0 +1,290 @@
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  background: #1d1f23;
+  color: #e6e6e6;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #14161a;
+  border-bottom: 1px solid #2a2d33;
+}
+
+header h1 { margin: 0; font-size: 1.3rem; font-weight: 600; }
+.header-actions button { margin-left: 8px; }
+#toggle-settings { display: inline-block; }
+.settings-status { min-height: 1.2em; font-size: 0.85em; margin: 4px 0 0; }
+
+button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: #2563eb; }
+button:disabled { background: #4b5563; cursor: not-allowed; opacity: 0.6; }
+button.secondary { background: #4b5563; }
+button.secondary:hover:not(:disabled) { background: #374151; }
+button.danger { background: #b91c1c; }
+
+.hidden { display: none !important; }
+
+section, main {
+  padding: 16px 24px;
+}
+
+#settings-panel {
+  background: #25282e;
+  border-bottom: 1px solid #2a2d33;
+}
+
+#settings-form .grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+#settings-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #c0c4cc;
+}
+
+#settings-form label.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+#settings-form input[type=number],
+#settings-form select {
+  margin-top: 4px;
+  background: #14161a;
+  color: #e6e6e6;
+  border: 1px solid #3a3d44;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.hint { color: #888; font-size: 0.8rem; }
+
+.combatants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.combatant {
+  background: #25282e;
+  padding: 14px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+}
+.combatant.is-human { border-color: #3b82f6; }
+.combatant.is-ai { border-color: #ef4444; }
+.combatant.is-attacker { box-shadow: 0 0 0 2px #fbbf24 inset; }
+
+.combatant h2 { margin: 0 0 4px; font-size: 1.05rem; }
+.role-badge { font-size: 0.8rem; color: #c0c4cc; margin-bottom: 8px; }
+
+.hd-bar {
+  height: 22px;
+  background: #14161a;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2a2d33;
+}
+.hd-segments { display: flex; height: 100%; }
+.hd-segments .seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #00000099;
+  font-weight: 700;
+}
+.seg.reserve { background: #22c55e; }
+.seg.exchange { background: #fbbf24; }
+.seg.used { background: #6b7280; }
+.seg.lost { background: #b91c1c; color: #fff; }
+
+.hd-numbers {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #c0c4cc;
+}
+.hd-numbers .num strong { color: #e6e6e6; }
+
+#status-line {
+  background: #14161a;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+#status-line:empty { display: none; }
+
+#action-panel {
+  background: #25282e;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  min-height: 80px;
+}
+#action-panel h3 { margin: 0 0 10px; font-size: 1rem; }
+#action-panel .row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+#action-panel input[type=number] {
+  background: #14161a;
+  color: #e6e6e6;
+  border: 1px solid #3a3d44;
+  padding: 6px 8px;
+  border-radius: 4px;
+  width: 70px;
+}
+
+.commit-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#action-panel input[type=range] {
+  width: 160px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+#commit-n-val {
+  min-width: 20px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #e6e6e6;
+  text-align: right;
+}
+.maneuver-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.maneuver-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 110px;
+}
+
+.maneuver-option .maneuver-btn {
+  width: 100%;
+}
+
+.param-label {
+  font-size: 0.8rem;
+  color: #c0c4cc;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.param-label input[type=number] {
+  background: #14161a;
+  color: #e6e6e6;
+  border: 1px solid #3a3d44;
+  padding: 4px 6px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+#reveal-panel {
+  background: #2a2d33;
+  border: 1px solid #fbbf24;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+#reveal-panel h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #fbbf24;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.narrative-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #d1d5db;
+}
+.narrative-body p { margin: 0 0 6px; }
+.narrative-body p:last-child { margin-bottom: 0; }
+.narrative-outcome {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #3a3d44;
+  font-size: 0.9rem;
+}
+.mech-line { color: #9ca3af; font-size: 0.82rem; line-height: 1.6; }
+.formula-line { color: #6b7280; font-size: 0.78rem; font-style: italic; }
+.mech-damage { color: #d1d5db; font-size: 0.85rem; font-weight: 600; margin-top: 6px; }
+
+#log-wrap {
+  background: #14161a;
+  padding: 8px 14px;
+  border-radius: 6px;
+  display: none;
+}
+#log-wrap summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+#log {
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.log-entry { padding: 4px 0; border-bottom: 1px solid #2a2d33; }
+.log-entry.turn-start { color: #fbbf24; font-weight: 700; }
+.log-entry.turn-end { color: #888; }
+.log-entry.game-start { color: #60a5fa; font-weight: 700; }
+.log-entry.game-over { color: #ef4444; font-weight: 700; }
+
+#game-over-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #14161a;
+  border: 2px solid #fbbf24;
+  padding: 24px 32px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.2rem;
+  z-index: 100;
+  box-shadow: 0 8px 32px #00000099;
+}
+#game-over-banner button { margin-top: 12px; }
