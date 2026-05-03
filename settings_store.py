@@ -17,6 +17,7 @@ class Settings:
     initiative_loser_penalty: float = 0.5
     human_role: str = "random"  # "attacker" | "defender" | "random"
     ai_difficulty: str = "medium"  # "easy" | "medium" | "hard"
+    exchange_mode: str = "simultaneous"  # "simultaneous" | "sequential"
 
 
 def load_settings() -> Settings:
@@ -52,9 +53,12 @@ def settings_from_form(form: dict) -> Settings:
         initiative_loser_penalty=max(0.0, min(1.0, float(form.get("initiative_loser_penalty", 0.5)))),
         human_role=form.get("human_role", "random"),
         ai_difficulty=form.get("ai_difficulty", "medium"),
+        exchange_mode=form.get("exchange_mode", "simultaneous"),
     )
     if s.human_role not in ("attacker", "defender", "random"):
         s.human_role = "random"
     if s.ai_difficulty not in ("easy", "medium", "hard"):
         s.ai_difficulty = "medium"
+    if s.exchange_mode not in ("simultaneous", "sequential"):
+        s.exchange_mode = "simultaneous"
     return s

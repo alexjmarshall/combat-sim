@@ -237,8 +237,11 @@ class GameSession:
             # AI is attacker; expose its commit but never its maneuver here.
             visible["atk_commit"] = self._atk_commit
         if self.phase == Phase.AWAIT_ATK_MANEUVER:
-            # AI is defender; expose its commit but never its maneuver here.
+            # AI is defender; expose its commit. Maneuver stays hidden in
+            # simultaneous mode but is revealed in sequential mode.
             visible["def_commit"] = self._def_commit
+            if self.settings.exchange_mode == "sequential" and self._def_maneuver is not None:
+                visible["def_maneuver"] = _maneuver_label(self._def_maneuver)
 
         prompt = self._current_prompt()
 
@@ -511,7 +514,7 @@ class GameSession:
         if self.phase == Phase.AWAIT_ATK_MANEUVER:
             atk_state = self.states[atk_idx]
             reserve_after_commit = atk_state.reserve - self._atk_commit
-            return {
+            prompt = {
                 "kind": "atk_maneuver",
                 "for_idx": atk_idx,
                 "atk_commit": self._atk_commit,
@@ -520,6 +523,9 @@ class GameSession:
                 "feint_followup_max": reserve_after_commit,
                 "dodge_roll_max": reserve_after_commit,
             }
+            if self.settings.exchange_mode == "sequential" and self._def_maneuver is not None:
+                prompt["def_maneuver"] = _maneuver_label(self._def_maneuver)
+            return prompt
         if self.phase == Phase.AWAIT_DEF_MANEUVER:
             def_state = self.states[def_idx]
             reserve_after_commit = def_state.reserve - self._def_commit

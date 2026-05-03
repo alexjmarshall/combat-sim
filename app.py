@@ -41,8 +41,6 @@ def index():
 def api_settings():
     if request.method == "GET":
         return jsonify(asdict(load_settings()))
-    if session.phase not in (Phase.IDLE, Phase.GAME_OVER):
-        return jsonify({"error": "cannot change settings while a bout is active"}), 409
     payload = request.get_json(force=True, silent=True) or {}
     new_settings = settings_from_form(payload)
     save_settings(new_settings)

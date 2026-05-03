@@ -34,6 +34,7 @@ async function loadSettings() {
   form.refresh_end_of_turn.checked = s.refresh_end_of_turn;
   form.human_role.value = s.human_role;
   form.ai_difficulty.value = s.ai_difficulty;
+  form.exchange_mode.value = s.exchange_mode;
 }
 
 async function saveSettings(e) {
@@ -48,12 +49,20 @@ async function saveSettings(e) {
     refresh_end_of_turn: form.refresh_end_of_turn.checked,
     human_role: form.human_role.value,
     ai_difficulty: form.ai_difficulty.value,
+    exchange_mode: form.exchange_mode.value,
   };
+  const statusEl = $("#settings-status");
+  function settingsFlash(msg, isError = false) {
+    statusEl.textContent = msg;
+    statusEl.style.color = isError ? "#ef4444" : "";
+    clearTimeout(statusEl._timer);
+    statusEl._timer = setTimeout(() => { statusEl.textContent = ""; }, 2000);
+  }
   try {
     await api("/api/settings", { method: "POST", body: payload });
-    flash("Settings saved.");
+    settingsFlash("Settings saved.");
   } catch (err) {
-    flash(`Could not save: ${err.message}`, true);
+    settingsFlash(`Could not save: ${err.message}`, true);
   }
 }
 
@@ -262,9 +271,12 @@ function renderDefCommit(panel, p) {
 function renderAtkManeuver(panel, p) {
   const feintMax = p.feint_followup_max;
   const dodgeMax = p.dodge_roll_max;
+  const defLine = p.def_maneuver
+    ? `You committed <strong>${p.atk_commit}</strong> dice. Your opponent committed <strong>${p.def_commit}</strong> dice and declared <strong>${p.def_maneuver}</strong>.`
+    : `You committed <strong>${p.atk_commit}</strong> dice. Your opponent committed <strong>${p.def_commit}</strong> dice.`;
   panel.innerHTML = `
     <h3>Choose your attacker maneuver</h3>
-    <p>You committed <strong>${p.atk_commit}</strong> dice. Your opponent committed <strong>${p.def_commit}</strong> dice.</p>
+    <p>${defLine}</p>
     <div class="maneuver-grid">
       <div class="maneuver-option">
         <button class="maneuver-btn" data-m="Attack">Attack</button>
@@ -597,7 +609,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#settings-form").addEventListener("submit", saveSettings);
   $("#new-game").addEventListener("click", newGame);
   $("#toggle-settings").addEventListener("click", () => {
-    $("#settings-panel").classList.toggle("hidden");
+    const panel = $("#settings-panel");
+    const nowHidden = panel.classList.toggle("hidden");
+    if (!nowHidden) loadSettings();
   });
   await newGame();
 });

@@ -18,7 +18,8 @@ header {
 
 header h1 { margin: 0; font-size: 1.3rem; font-weight: 600; }
 .header-actions button { margin-left: 8px; }
-#toggle-settings { display: none; }
+#toggle-settings { display: inline-block; }
+.settings-status { min-height: 1.2em; font-size: 0.85em; margin: 4px 0 0; }
 
 button {
   background: #3b82f6;

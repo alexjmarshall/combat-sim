@@ -52,9 +52,16 @@
             <option value="hard">Hard</option>
           </select>
         </label>
+        <label>Exchange mode
+          <select name="exchange_mode">
+            <option value="simultaneous">Simultaneous (defender's maneuver hidden)</option>
+            <option value="sequential">Sequential (defender declares maneuver openly)</option>
+          </select>
+        </label>
       </div>
       <button type="submit">Save settings</button>
-      <p class="hint">Settings lock in when you start a new game.</p>
+      <p id="settings-status" class="settings-status"></p>
+      <p class="hint">Settings take effect when you start a new game.</p>
     </form>
   </section>
 

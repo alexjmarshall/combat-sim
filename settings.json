@@ -1,0 +1,11 @@
+{
+  "weapon_bonus": 2,
+  "armor_bonus": 2,
+  "refresh_start_of_turn": true,
+  "refresh_end_of_turn": false,
+  "combatant_dice": 10,
+  "initiative_loser_penalty": 0.5,
+  "human_role": "random",
+  "ai_difficulty": "hard",
+  "exchange_mode": "sequential"
+}
