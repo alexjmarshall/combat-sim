@@ -163,8 +163,7 @@ class GameSession:
 
         atk_followup = 0
         if m == Maneuver.FEINT:
-            cap = min(reserve_after_commit, self._def_commit)
-            atk_followup = max(0, min(cap, int(followup or 0)))
+            atk_followup = max(0, min(reserve_after_commit, int(followup or 0)))
         elif m == Maneuver.DODGE:
             atk_followup = max(0, min(reserve_after_commit, int(dodge_roll or 0)))
 
@@ -193,8 +192,6 @@ class GameSession:
             atk_state = self.states[self.attacker_idx]
             reserve_after_atk_commit = atk_state.reserve - self._atk_commit
             self._atk_followup = choose_followup(self._ai_strategy, reserve_after_atk_commit, m)
-            # Cap by defender's commit per rules.
-            self._atk_followup = min(self._atk_followup, self._def_commit)
         elif self._atk_maneuver == Maneuver.DODGE:
             atk_state = self.states[self.attacker_idx]
             reserve_after_atk_commit = atk_state.reserve - self._atk_commit
@@ -388,7 +385,6 @@ class GameSession:
                 # Defender will be converted to PARRY internally; choose follow-up vs PARRY.
                 reserve_after_atk_commit = atk_state.reserve - ac
                 self._atk_followup = choose_followup(self._ai_strategy, reserve_after_atk_commit, Maneuver.PARRY)
-                self._atk_followup = min(self._atk_followup, self._def_commit)  # caps at 0
             elif am == Maneuver.DODGE:
                 # AI dodging vs defenseless makes no sense; treat as no-op dodge roll = 0.
                 self._atk_followup = 0
@@ -521,7 +517,7 @@ class GameSession:
                 "atk_commit": self._atk_commit,
                 "def_commit": self._def_commit,
                 "allowed": ["Attack", "Feint", "Dodge"],
-                "feint_followup_max": min(reserve_after_commit, self._def_commit),
+                "feint_followup_max": reserve_after_commit,
                 "dodge_roll_max": reserve_after_commit,
             }
         if self.phase == Phase.AWAIT_DEF_MANEUVER:

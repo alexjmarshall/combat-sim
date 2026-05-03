@@ -103,8 +103,12 @@ function renderCombatants() {
     let s = state.states[i];
     // Attacker's committed dice don't move on the server until exchange resolution.
     // Reflect the pending commit visually during maneuver selection.
-    if (state.phase === "await_atk_maneuver" && i === atk) {
+    if ((state.phase === "await_atk_maneuver" || state.phase === "await_def_commit" || state.phase === "await_def_maneuver") && i === atk) {
       const n = state.prompt.atk_commit;
+      s = { ...s, reserve: s.reserve - n, exchange: s.exchange + n };
+    }
+    if ((state.phase === "await_atk_maneuver" || state.phase === "await_def_maneuver") && i !== atk) {
+      const n = state.prompt.def_commit;
       s = { ...s, reserve: s.reserve - n, exchange: s.exchange + n };
     }
     const isHuman = i === human;
@@ -186,6 +190,18 @@ function previewAtkDice(n) {
   `;
 }
 
+function previewDefDice(n) {
+  const s = state.states[1 - state.attacker_idx];
+  const preview = { ...s, reserve: s.reserve - n, exchange: s.exchange + n };
+  const root = $("#combatant-0");
+  renderHdBar(root.querySelector(".hd-segments"), preview);
+  root.querySelector(".hd-numbers").innerHTML = `
+    <span class="num">Reserve <strong>${preview.reserve}</strong></span>
+    <span class="num">Spent <strong>${preview.used}</strong></span>
+    <span class="num">HD <strong>${preview.total_hd}/${preview.max_hd}</strong></span>
+  `;
+}
+
 function renderAtkCommit(panel, p) {
   const defaultVal = Math.min(Math.ceil(p.max / 2), p.max);
   panel.innerHTML = `
@@ -217,18 +233,29 @@ function renderAtkCommit(panel, p) {
 }
 
 function renderDefCommit(panel, p) {
+  const defaultVal = Math.min(p.atk_commit, p.max);
   panel.innerHTML = `
     <h3>Defender — commit dice</h3>
     <p>Your opponent committed <strong>${p.atk_commit}</strong> dice to their attack.</p>
     <p class="hint">You may commit between ${p.min} and ${p.max} dice.</p>
     <div class="row">
-      <input type="number" id="commit-n" min="${p.min}" max="${p.max}" value="${Math.min(p.atk_commit, p.max)}">
+      <div class="commit-slider-wrap">
+        <input type="range" id="commit-n" min="${p.min}" max="${p.max}" value="${defaultVal}">
+        <span id="commit-n-val">${defaultVal}</span>
+      </div>
       <button id="btn-commit">Commit</button>
     </div>
   `;
+  const slider = $("#commit-n");
+  const valDisplay = $("#commit-n-val");
+  slider.addEventListener("input", () => {
+    const n = parseInt(slider.value, 10);
+    valDisplay.textContent = n;
+    previewDefDice(n);
+  });
+  previewDefDice(defaultVal);
   $("#btn-commit").addEventListener("click", async () => {
-    const n = parseInt($("#commit-n").value, 10);
-    await postAction("/api/def-commit", { n });
+    await postAction("/api/def-commit", { n: parseInt(slider.value, 10) });
   });
 }
 
