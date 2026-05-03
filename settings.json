@@ -7,5 +7,5 @@
   "initiative_loser_penalty": 0.5,
   "human_role": "random",
   "ai_difficulty": "hard",
-  "exchange_mode": "sequential"
+  "exchange_mode": "simultaneous"
 }

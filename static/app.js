@@ -517,11 +517,43 @@ function renderRevealHTML(x) {
     mechLines.push(`Dodge: ${x.dodge_successes}/${x.dodge_rolled} — ${x.dodge_succeeded ? "passed" : "failed"}`);
   }
 
+  const W = state.settings.weapon_bonus;
+  const A = state.settings.armor_bonus;
+  function fmtDmg(label, hits, capDice) {
+    const effWep = Math.min(W, capDice);
+    const wepStr = effWep < W ? `min(${W},${capDice}d)` : `${effWep}`;
+    const dmg = Math.max(0, hits + effWep - A);
+    return `${label}: ${hits} hit${hits !== 1 ? "s" : ""} + ${wepStr} wep − ${A} arm = ${dmg}`;
+  }
+
+  const formulaLines = [];
+  if (am === "Attack" && dm === "Parry") {
+    const net = x.atk_successes - x.def_successes;
+    if (net >= 1) formulaLines.push(fmtDmg(atkShort, net, x.atk_rolled));
+  } else if (am === "Attack" && dm === "Counter") {
+    if (x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+    if (x.def_rolled > 0 && x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+  } else if (am === "Attack" && dm === "Dodge") {
+    if (!dodOK && x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+  } else if (am === "Feint" && dm === "Parry") {
+    if (x.followup_rolled > 0 && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+  } else if (am === "Feint" && dm === "Counter") {
+    if (x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+    if (x.followup_rolled > 0 && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+  } else if (am === "Dodge" && dm === "Counter") {
+    if (!dodOK && x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+  } else if (am === "Feint" && dm === "Dodge") {
+    if (!dodOK && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+  } else if (dm === "Defenseless") {
+    if (x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+  }
+
   return `
     <div class="narrative-body">
       ${paras.map(p => `<p>${p}</p>`).join("")}
       <div class="narrative-outcome">
         ${mechLines.map(l => `<div class="mech-line">${l}</div>`).join("")}
+        ${formulaLines.map(l => `<div class="mech-line formula-line">${l}</div>`).join("")}
       </div>
     </div>
   `;

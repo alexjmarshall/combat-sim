@@ -246,6 +246,7 @@ section, main {
   font-size: 0.9rem;
 }
 .mech-line { color: #9ca3af; font-size: 0.82rem; line-height: 1.6; }
+.formula-line { color: #6b7280; font-size: 0.78rem; font-style: italic; }
 .mech-damage { color: #d1d5db; font-size: 0.85rem; font-weight: 600; margin-top: 6px; }
 
 #log-wrap {
