@@ -12,8 +12,8 @@ STOP_HIT = False          # Counter deals extra damage equal to attacker's succe
 DECEPTIVE_ATTACK = False  # Attacker may pump bonus dice into exchange at 2-for-1 reserve cost
 EVASIVE_ATTACK = False    # Successful dodger makes a free unopposed attack from remaining reserve
 
-WEAPON_BONUS = 2  # Max damage bonus for attacker; scales +1 per die committed up to this cap
-ARMOR_BONUS = 2   # Extra successes for defender on each exchange
+WEAPON_BONUS = 3  # Max damage bonus for attacker; scales +1 per die committed up to this cap
+ARMOR_BONUS = 3   # Extra successes for defender on each exchange
 
 
 class Maneuver(Enum):
@@ -176,10 +176,9 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
     # Feint (atk) vs Dodge (def)
     if atk_maneuver == Maneuver.FEINT and def_maneuver == Maneuver.DODGE:
         attacker.clear_exchange_to_used()
-        followup = min(atk_followup_commit, attacker.reserve)
-        attacker.commit(followup)
-        result.followup_rolled = followup
-        followup_successes = roll_successes(followup)
+        attacker.commit(atk_followup_commit)
+        result.followup_rolled = atk_followup_commit
+        followup_successes = roll_successes(atk_followup_commit)
         result.followup_successes = followup_successes
         defender.commit(def_followup_commit)
         result.dodge_rolled = defender.exchange
@@ -208,7 +207,7 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
                      atk_evasive_commit=0, def_evasive_commit=0):
     result = ExchangeResult()
     attacker.commit(atk_commit)
-    actual_def_commit = defender.commit(def_commit)
+    defender.commit(def_commit)
 
     if def_maneuver == Maneuver.DEFENSELESS:
         def_maneuver = Maneuver.PARRY
@@ -271,24 +270,21 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
 
     elif atk_maneuver == Maneuver.FEINT:
         attacker.clear_exchange_to_used()
-        max_followup = actual_def_commit  # follow-up cannot exceed def commit
 
         if def_maneuver == Maneuver.PARRY:
             defender.clear_exchange_to_used()
-            followup = min(atk_followup_commit, attacker.reserve, max_followup)
-            if followup > 0:
-                attacker.commit(followup)
-                result.followup_rolled = followup
-                followup_successes = roll_successes(followup)
+            if atk_followup_commit > 0:
+                attacker.commit(atk_followup_commit)
+                result.followup_rolled = atk_followup_commit
+                followup_successes = roll_successes(atk_followup_commit)
                 result.followup_successes = followup_successes
                 damage = max(0, followup_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if followup_successes > 0 else 0
                 result.defender_damage_taken = defender.apply_damage_default(damage)
                 attacker.clear_exchange_to_used()
 
         elif def_maneuver == Maneuver.COUNTER:
-            followup = min(atk_followup_commit, attacker.reserve, max_followup)
-            attacker.commit(followup)
-            result.followup_rolled = followup
+            attacker.commit(atk_followup_commit)
+            result.followup_rolled = atk_followup_commit
             def_rolled = def_commit
             def_successes = roll_successes(def_commit)
             result.def_rolled = def_rolled
