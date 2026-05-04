@@ -104,7 +104,7 @@ async function newGame() {
   lastShownExchangeKey = null;
   try {
     state = await Promise.resolve(api.newGame());
-    $("#settings-panel").classList.add("hidden");
+    $("#settings-overlay").classList.add("hidden");
     $("#game-panel").classList.remove("hidden");
     render();
   } catch (err) {
@@ -444,6 +444,47 @@ function renderRevealHTML(x) {
 
   const am = x.atk_maneuver;
   const dm = x.def_maneuver;
+
+  const W = state.settings.weapon_bonus;
+  const A = state.settings.armor_bonus;
+  function rawDmg(h, capDice) { return Math.max(0, h + Math.min(W, capDice) - A); }
+  function woundLabel(raw) {
+    if (raw >= 3) return "Grievous Wound";
+    if (raw === 2) return "Serious Wound";
+    return null;
+  }
+
+  let rawToDef = 0, rawToAtk = 0;
+  if (am === "Attack" && dm === "Parry") {
+    const net = x.atk_successes - x.def_successes;
+    if (net >= 1) rawToDef = rawDmg(net, x.atk_rolled);
+  } else if (am === "Attack" && dm === "Counter") {
+    if (x.atk_successes >= 1) rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
+    if (x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
+  } else if (am === "Attack" && dm === "Dodge") {
+    if (!dodOK && x.atk_successes >= 1) rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
+  } else if (am === "Feint" && dm === "Parry") {
+    if (x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+  } else if (am === "Feint" && dm === "Counter") {
+    if (x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
+    if (x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+  } else if (am === "Dodge" && dm === "Counter") {
+    if (!dodOK && x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
+  } else if (am === "Feint" && dm === "Dodge") {
+    if (!dodOK && x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+  } else if (dm === "Defenseless") {
+    if (am === "Feint" && x.followup_rolled > 0 && x.followup_successes >= 1)
+      rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+    else if (x.atk_successes >= 1)
+      rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
+  }
+
+  const rawPlayerDealt = youAreAtk ? rawToDef : rawToAtk;
+  const rawPlayerTook  = youAreAtk ? rawToAtk : rawToDef;
+  const dealtLabel = woundLabel(rawPlayerDealt);
+  const tookLabel  = woundLabel(rawPlayerTook);
+  function dmgStr(hd, label) { return label ? `a ${label}` : `${hd} damage`; }
+
   const paras = [];
 
   if (am === "Attack" && dm === "Parry") {
@@ -514,9 +555,9 @@ function renderRevealHTML(x) {
   // Always end with an explicit hit/miss result from the player's perspective
   const playerDealt = youAreAtk ? dmgDef : dmgAtk;
   const playerTook  = youAreAtk ? dmgAtk : dmgDef;
-  if (playerDealt > 0 && playerTook > 0) paras.push(`You deal ${playerDealt} damage and take ${playerTook} damage.`);
-  else if (playerDealt > 0)              paras.push(`You deal ${playerDealt} damage.`);
-  else if (playerTook > 0)               paras.push(`You take ${playerTook} damage.`);
+  if (playerDealt > 0 && playerTook > 0) paras.push(`You deal ${dmgStr(playerDealt, dealtLabel)} and take ${dmgStr(playerTook, tookLabel)}.`);
+  else if (playerDealt > 0)              paras.push(`You deal ${dmgStr(playerDealt, dealtLabel)}.`);
+  else if (playerTook > 0)               paras.push(`You take ${dmgStr(playerTook, tookLabel)}.`);
   else                                   paras.push(`No damage.`);
 
   const atkShort = youAreAtk ? "You" : "Opp";
@@ -529,7 +570,12 @@ function renderRevealHTML(x) {
     mechLines.push(`${atkShort}: ${x.atk_maneuver} · ${x.atk_commit} committed · (no roll)`);
   }
   if (x.def_rolled > 0) {
-    mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${x.def_successes}/${x.def_rolled} successes`);
+    if (dm === "Parry" && am === "Attack") {
+      const rawDef = Math.floor(x.def_successes / 2);
+      mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${rawDef}/${x.def_rolled} successes (×2 = ${x.def_successes} effective)`);
+    } else {
+      mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${x.def_successes}/${x.def_rolled} successes`);
+    }
   } else {
     mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed`);
   }
@@ -540,13 +586,14 @@ function renderRevealHTML(x) {
     mechLines.push(`Dodge: ${x.dodge_successes}/${x.dodge_rolled} — ${x.dodge_succeeded ? "passed" : "failed"}`);
   }
 
-  const W = state.settings.weapon_bonus;
-  const A = state.settings.armor_bonus;
   function fmtDmg(label, hits, capDice) {
     const effWep = Math.min(W, capDice);
     const wepStr = effWep < W ? `min(${W},${capDice}d)` : `${effWep}`;
-    const dmg = Math.max(0, hits + effWep - A);
-    return `${label}: ${hits} hit${hits !== 1 ? "s" : ""} + ${wepStr} wep − ${A} arm = ${dmg}`;
+    const raw = Math.max(0, hits + effWep - A);
+    let suffix = "";
+    if (raw >= 3) suffix = ` → Grievous Wound (×3 = ${raw * 3} HD)`;
+    else if (raw === 2) suffix = ` → Serious Wound (×3 = 6 HD)`;
+    return `${label}: ${hits} hit${hits !== 1 ? "s" : ""} + ${wepStr} wep − ${A} arm = ${raw}${suffix}`;
   }
 
   const formulaLines = [];
@@ -568,7 +615,10 @@ function renderRevealHTML(x) {
   } else if (am === "Feint" && dm === "Dodge") {
     if (!dodOK && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
   } else if (dm === "Defenseless") {
-    if (x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+    if (am === "Feint" && x.followup_rolled > 0 && x.followup_successes >= 1)
+      formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+    else if (x.atk_successes >= 1)
+      formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
   }
 
   return `
@@ -664,9 +714,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#settings-form").addEventListener("submit", onSaveSettings);
   $("#new-game").addEventListener("click", newGame);
   $("#toggle-settings").addEventListener("click", () => {
-    const panel = $("#settings-panel");
-    const nowHidden = panel.classList.toggle("hidden");
+    const overlay = $("#settings-overlay");
+    const nowHidden = overlay.classList.toggle("hidden");
     if (!nowHidden) populateSettingsForm();
+  });
+  $("#close-settings").addEventListener("click", () => {
+    $("#settings-overlay").classList.add("hidden");
+  });
+  $("#settings-overlay").addEventListener("click", (e) => {
+    if (e.target === $("#settings-overlay"))
+      $("#settings-overlay").classList.add("hidden");
   });
   await newGame();
 });

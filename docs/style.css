@@ -42,10 +42,33 @@ section, main {
   padding: 16px 24px;
 }
 
+#settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#settings-overlay.hidden { display: none !important; }
+
 #settings-panel {
   background: #25282e;
-  border-bottom: 1px solid #2a2d33;
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
 }
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.settings-header h2 { margin: 0; }
 
 #settings-form .grid {
   display: grid;

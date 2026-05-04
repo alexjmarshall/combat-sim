@@ -353,14 +353,7 @@ export function resolveExchange(opts) {
               atkSuccesses + Math.min(weaponBonus, atkRolled) - armorBonus,
             )
           : 0;
-      const dmgToExchange = Math.min(totalAtkDmg, defender.exchange);
-      defender.exchange -= dmgToExchange;
-      defender.lost += dmgToExchange;
-      const remainingAtkDmg = totalAtkDmg - dmgToExchange;
-      let appliedAtkDmg = dmgToExchange;
-      if (remainingAtkDmg > 0)
-        appliedAtkDmg += defender.applyDamageDefault(remainingAtkDmg);
-      result.defenderDamageTaken = appliedAtkDmg;
+      result.defenderDamageTaken = defender.applyDamageDefault(totalAtkDmg);
       if (defender.totalHd > 0 && defender.exchange > 0) {
         const defRolled = defender.exchange;
         const defSuccesses = rollSuccesses(defRolled);
@@ -421,14 +414,7 @@ export function resolveExchange(opts) {
                 armorBonus,
             )
           : 0;
-      const dmgToExchange = Math.min(totalCounterDmg, attacker.exchange);
-      attacker.exchange -= dmgToExchange;
-      attacker.lost += dmgToExchange;
-      const remainingDefDmg = totalCounterDmg - dmgToExchange;
-      let appliedCounterDmg = dmgToExchange;
-      if (remainingDefDmg > 0)
-        appliedCounterDmg += attacker.applyDamageDefault(remainingDefDmg);
-      result.attackerDamageTaken = appliedCounterDmg;
+      result.attackerDamageTaken = attacker.applyDamageDefault(totalCounterDmg);
       if (attacker.totalHd > 0 && attacker.exchange > 0) {
         const fuSuccesses = rollSuccesses(attacker.exchange);
         result.followupSuccesses = fuSuccesses;

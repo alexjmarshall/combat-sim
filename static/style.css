@@ -42,9 +42,21 @@ section, main {
   padding: 16px 24px;
 }
 
+#top-bar {
+  position: relative;
+}
+
 #settings-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
   background: #25282e;
   border-bottom: 1px solid #2a2d33;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  max-height: calc(100vh - 57px);
+  overflow-y: auto;
 }
 
 #settings-form .grid {
