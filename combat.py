@@ -54,7 +54,7 @@ class CombatantState:
         self.exchange = 0
     
     def apply_damage_default(self, damage):
-        remaining = damage
+        remaining = damage if damage < 2 else damage * 3 # TEST
         applied = 0
         from_exchange = min(remaining, self.exchange)
         self.exchange -= from_exchange
@@ -145,6 +145,8 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
             defender.clear_exchange_to_used()
             result.attacker_damage_taken += _evasive_attack(defender, attacker, def_evasive_commit)
         else:
+            if dodge_roll > 0:
+                atk_successes = max(0, atk_successes - dodge_roll)
             damage = max(0, atk_successes + min(WEAPON_BONUS, atk_dice_for_bonus) - ARMOR_BONUS) if atk_successes > 0 else 0
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
@@ -167,6 +169,8 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
             defender.clear_exchange_to_used()
             result.defender_damage_taken += _evasive_attack(attacker, defender, atk_evasive_commit)
         else:
+            if dodge_roll > 0:
+                def_successes = max(0, def_successes - dodge_roll)
             damage = max(0, def_successes + min(WEAPON_BONUS, def_dice_for_bonus) - ARMOR_BONUS) if def_successes > 0 else 0
             result.attacker_damage_taken = attacker.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
@@ -191,6 +195,8 @@ def _resolve_dodge(attacker, defender, atk_commit, def_commit,
             defender.clear_exchange_to_used()
             result.attacker_damage_taken += _evasive_attack(defender, attacker, def_evasive_commit)
         else:
+            if dodge_roll > 0:
+                followup_successes = max(0, followup_successes - dodge_roll)
             damage = max(0, followup_successes + min(WEAPON_BONUS, atk_dice_for_bonus) - ARMOR_BONUS) if followup_successes > 0 else 0
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
@@ -212,7 +218,7 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
     if def_maneuver == Maneuver.DEFENSELESS:
         def_maneuver = Maneuver.PARRY
 
-    if atk_maneuver == Maneuver.DECEPTIVE_ATTACK and DECEPTIVE_ATTACK:
+    if atk_maneuver == Maneuver.DECEPTIVE_ATTACK and DECEPTIVE_ATTACK and def_maneuver != Maneuver.COUNTER:
         bonus = max(0, min(atk_bonus, attacker.reserve // 2))
         attacker.reserve -= 2 * bonus
         attacker.exchange += bonus
@@ -232,7 +238,7 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
 
         if def_maneuver == Maneuver.PARRY:
             def_rolled = defender.exchange
-            def_successes = roll_successes(def_rolled)
+            def_successes = int(roll_successes(def_rolled) * 2) # TEST: parry is extra strong
             result.def_rolled = def_rolled
             result.def_successes = def_successes
             if atk_successes > def_successes:
@@ -242,31 +248,62 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
             result.defender_damage_taken = defender.apply_damage_default(damage)
             attacker.clear_exchange_to_used()
             defender.clear_exchange_to_used()
+            def_successes = int(def_successes // 2) # TEST: parry is extra strong, so reduce successes for riposte calculation
             if RIPOSTE and def_successes > atk_successes:
                 riposte_damage = max(0, (def_successes - atk_successes) + min(WEAPON_BONUS, def_rolled) - ARMOR_BONUS)
                 if riposte_damage > 0:
                     result.attacker_damage_taken = attacker.apply_damage_default(riposte_damage)
 
         elif def_maneuver == Maneuver.COUNTER:
-            total_atk_dmg = max(0, atk_successes + min(WEAPON_BONUS, atk_rolled) - ARMOR_BONUS) if atk_successes > 0 else 0
-            dmg_to_exchange = min(total_atk_dmg, defender.exchange)
-            defender.exchange -= dmg_to_exchange
-            defender.lost += dmg_to_exchange
-            remaining_atk_dmg = total_atk_dmg - dmg_to_exchange
-            applied_atk_dmg = dmg_to_exchange
-            if remaining_atk_dmg > 0:
-                applied_atk_dmg += defender.apply_damage_default(remaining_atk_dmg)
-            result.defender_damage_taken = applied_atk_dmg
-            if defender.total_hd > 0 and defender.exchange > 0:
-                def_rolled = defender.exchange
-                def_successes = roll_successes(def_rolled)
+            if atk_maneuver == Maneuver.DECEPTIVE_ATTACK:
+                # Counter has priority: rolls first before DA adds bonus dice
+                def_rolled = def_commit
+                def_successes = roll_successes(def_commit)
                 result.def_rolled = def_rolled
                 result.def_successes = def_successes
-                stop_hit_bonus = atk_successes if (STOP_HIT and def_successes >= atk_successes) else 0
-                counter_dmg = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS + stop_hit_bonus) if def_successes > 0 else 0
-                result.attacker_damage_taken = attacker.apply_damage_default(counter_dmg)
-            attacker.clear_exchange_to_used()
-            defender.clear_exchange_to_used()
+                total_counter_dmg = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS) if def_successes > 0 else 0
+                dmg_to_exchange = min(total_counter_dmg, attacker.exchange)
+                attacker.exchange -= dmg_to_exchange
+                attacker.lost += dmg_to_exchange
+                remaining_counter_dmg = total_counter_dmg - dmg_to_exchange
+                applied_counter_dmg = dmg_to_exchange
+                if remaining_counter_dmg > 0:
+                    applied_counter_dmg += attacker.apply_damage_default(remaining_counter_dmg)
+                result.attacker_damage_taken = applied_counter_dmg
+                if attacker.total_hd > 0 and attacker.exchange > 0:
+                    if DECEPTIVE_ATTACK:
+                        bonus = max(0, min(atk_bonus, attacker.reserve // 2))
+                        attacker.reserve -= 2 * bonus
+                        attacker.exchange += bonus
+                        attacker.used += bonus
+                    atk_rolled = attacker.exchange
+                    atk_successes = roll_successes(atk_rolled)
+                    result.atk_rolled = atk_rolled
+                    result.atk_successes = atk_successes
+                    da_dmg = max(0, atk_successes + min(WEAPON_BONUS, atk_rolled) - ARMOR_BONUS) if atk_successes > 0 else 0
+                    result.defender_damage_taken = defender.apply_damage_default(da_dmg)
+                attacker.clear_exchange_to_used()
+                defender.clear_exchange_to_used()
+            else:
+                total_atk_dmg = max(0, atk_successes + min(WEAPON_BONUS, atk_rolled) - ARMOR_BONUS) if atk_successes > 0 else 0
+                dmg_to_exchange = min(total_atk_dmg, defender.exchange)
+                defender.exchange -= dmg_to_exchange
+                defender.lost += dmg_to_exchange
+                remaining_atk_dmg = total_atk_dmg - dmg_to_exchange
+                applied_atk_dmg = dmg_to_exchange
+                if remaining_atk_dmg > 0:
+                    applied_atk_dmg += defender.apply_damage_default(remaining_atk_dmg)
+                result.defender_damage_taken = applied_atk_dmg
+                if defender.total_hd > 0 and defender.exchange > 0:
+                    def_rolled = defender.exchange
+                    def_successes = roll_successes(def_rolled)
+                    result.def_rolled = def_rolled
+                    result.def_successes = def_successes
+                    stop_hit_bonus = atk_successes if (STOP_HIT and def_successes >= atk_successes) else 0
+                    counter_dmg = max(0, def_successes + min(WEAPON_BONUS, defender.exchange) - ARMOR_BONUS + stop_hit_bonus) if def_successes > 0 else 0
+                    result.attacker_damage_taken = attacker.apply_damage_default(counter_dmg)
+                attacker.clear_exchange_to_used()
+                defender.clear_exchange_to_used()
 
     elif atk_maneuver == Maneuver.FEINT:
         attacker.clear_exchange_to_used()
