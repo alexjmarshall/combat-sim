@@ -280,6 +280,7 @@ export function resolveExchange(opts) {
     stopHit = false,
     deceptiveAttack = false,
     evasiveAttack = false,
+    endTurnOnAttackerDamage = false,
   } = opts;
 
   const flags = { weaponBonus, armorBonus, evasiveAttack };
@@ -429,7 +430,9 @@ export function resolveExchange(opts) {
             )
           : 0;
       result.attackerDamageTaken = attacker.applyDamageDefault(totalCounterDmg);
-      if (attacker.totalHd > 0 && attacker.exchange > 0) {
+      const abortFollowup =
+        endTurnOnAttackerDamage && result.attackerDamageTaken > 0;
+      if (!abortFollowup && attacker.totalHd > 0 && attacker.exchange > 0) {
         const fuSuccesses = rollSuccesses(attacker.exchange);
         result.followupSuccesses = fuSuccesses;
         const dmg =

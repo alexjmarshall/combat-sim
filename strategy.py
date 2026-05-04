@@ -4,13 +4,12 @@ import math
 import random
 from dataclasses import dataclass
 import combat
-from combat import Maneuver, CombatantState, resolve_exchange, DECEPTIVE_ATTACK as DECEPTIVE_ATTACK_ENABLED
+from combat import Maneuver, CombatantState, resolve_exchange, DECEPTIVE_ATTACK as DECEPTIVE_ATTACK_ENABLED, END_TURN_ON_ATTACKER_DAMAGE
 
 REFRESH_START_OF_TURN = True
 REFRESH_END_OF_TURN = False
 COMBATANT_DICE = 10
 INITIATIVE_LOSER_PENALTY = 0.5  # fraction of dice the initiative loser starts with (1.0 = no penalty)
-END_TURN_ON_ATTACKER_DAMAGE = True  # if True, attacker's turn ends immediately on taking any damage
 
 @dataclass
 class Strategy:

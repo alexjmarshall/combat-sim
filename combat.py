@@ -11,6 +11,7 @@ RIPOSTE = False
 STOP_HIT = False          # Counter deals extra damage equal to attacker's successes when it wins
 DECEPTIVE_ATTACK = False  # Attacker may pump bonus dice into exchange at 2-for-1 reserve cost
 EVASIVE_ATTACK = False    # Successful dodger makes a free unopposed attack from remaining reserve
+END_TURN_ON_ATTACKER_DAMAGE = True  # if True, attacker's turn ends immediately on taking any damage
 
 WEAPON_BONUS = 2  # Max damage bonus for attacker; scales +1 per die committed up to this cap
 ARMOR_BONUS = 2   # Extra successes for defender on each exchange
@@ -339,7 +340,8 @@ def resolve_exchange(attacker, defender, atk_commit, def_commit,
             if remaining_def_dmg > 0:
                 applied_counter_dmg += attacker.apply_damage_default(remaining_def_dmg)
             result.attacker_damage_taken = applied_counter_dmg
-            if attacker.total_hd > 0 and attacker.exchange > 0:
+            abort_followup = END_TURN_ON_ATTACKER_DAMAGE and applied_counter_dmg > 0
+            if not abort_followup and attacker.total_hd > 0 and attacker.exchange > 0:
                 fu_successes = roll_successes(attacker.exchange)
                 result.followup_successes = fu_successes
                 dmg = max(0, fu_successes + min(WEAPON_BONUS, attacker.exchange) - ARMOR_BONUS) if fu_successes > 0 else 0

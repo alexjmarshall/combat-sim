@@ -365,6 +365,7 @@ export class GameSession {
       defEvasiveCommit: 0,
       weaponBonus: this.settings.weapon_bonus,
       armorBonus: this.settings.armor_bonus,
+      endTurnOnAttackerDamage: this.settings.end_turn_on_attacker_damage,
     });
 
     const postAtk = this._stateDict(atkState);

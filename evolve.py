@@ -92,7 +92,11 @@ def report(finals, label=""):
     print("\n" + "=" * 70)
     print(f"RESULTS{': ' + label if label else ''}")
     print("=" * 70)
-    
+
+    wr_rank1 = finals[0][1]
+    wr_rank10 = finals[min(9, len(finals) - 1)][1]
+    print(f"\nTop-10 win rates: rank1={wr_rank1:.3f}  rank10={wr_rank10:.3f}  spread={wr_rank1 - wr_rank10:.3f}")
+
     totals = defaultdict(int)
     te = 0
     all_commits = defaultdict(list)
@@ -157,6 +161,29 @@ def report(finals, label=""):
           f"dp={s.dodge_prob_vs_low:.2%} dc={s.dodge_commit_vs_low_frac:.2%} dr={s.dodge_roll_vs_low_frac:.2%} ea={s.evasive_vs_low_frac:.2%}")
     print(f"  vs HI:  cp={s.counter_prob_vs_high:.2%} p_c={s.parry_commit_vs_high_frac:.2%} c_c={s.counter_commit_vs_high_frac:.2%} "
           f"dp={s.dodge_prob_vs_high:.2%} dc={s.dodge_commit_vs_high_frac:.2%} dr={s.dodge_roll_vs_high_frac:.2%} ea={s.evasive_vs_high_frac:.2%}")
+
+    top10 = [s for s, *_ in finals[:10]]
+    m = lambda attr: statistics.mean(getattr(x, attr) for x in top10)
+    sd = lambda attr: statistics.pstdev(getattr(x, attr) for x in top10)
+    ms = lambda a: f"{m(a):.2%}±{sd(a):.2%}"
+    print(f"\nTop-10 parameters (mean±sd):")
+    print(f"  feint_p={ms('feint_prob')} sa_c={ms('sa_commit_frac')} f_c={ms('feint_commit_frac')}")
+    print(f"  fu_P={ms('feint_followup_vs_parry_frac')} fu_C={ms('feint_followup_vs_counter_frac')}")
+    print(f"  dodge_p={ms('dodge_prob_atk')} d_c={ms('dodge_commit_atk_frac')} d_r={ms('dodge_roll_atk_frac')} ea={ms('evasive_atk_frac')}")
+    print(f"  def: threshold={ms('commit_ratio_threshold')}")
+    print(f"  vs LOW: cp={ms('counter_prob_vs_low')} p_c={ms('parry_commit_vs_low_frac')} c_c={ms('counter_commit_vs_low_frac')} "
+          f"dp={ms('dodge_prob_vs_low')} dc={ms('dodge_commit_vs_low_frac')} dr={ms('dodge_roll_vs_low_frac')} ea={ms('evasive_vs_low_frac')}")
+    print(f"  vs HI:  cp={ms('counter_prob_vs_high')} p_c={ms('parry_commit_vs_high_frac')} c_c={ms('counter_commit_vs_high_frac')} "
+          f"dp={ms('dodge_prob_vs_high')} dc={ms('dodge_commit_vs_high_frac')} dr={ms('dodge_roll_vs_high_frac')} ea={ms('evasive_vs_high_frac')}")
+
+    top_strat = finals[0][0]
+    mid_strat = finals[min(5, len(finals) - 1)][0]
+    random_opps = [Strategy.random() for _ in range(20)]
+    wr_top_vs_random, *_ = evaluate(top_strat, random_opps, n=15, hd=COMBATANT_DICE)
+    wr_mid_vs_random, *_ = evaluate(mid_strat, random_opps, n=15, hd=COMBATANT_DICE)
+    print(f"\nBaseline (vs. 20 random strategies, 15 games each):")
+    print(f"  Top-1 win rate vs random: {wr_top_vs_random:.1%}   (>70% = strategy matters; ~50% = noise)")
+    print(f"  Top-6 win rate vs random: {wr_mid_vs_random:.1%}")
 
 
 if __name__ == "__main__":
