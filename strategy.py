@@ -8,7 +8,7 @@ from combat import Maneuver, CombatantState, resolve_exchange, DECEPTIVE_ATTACK 
 
 REFRESH_START_OF_TURN = True
 REFRESH_END_OF_TURN = False
-COMBATANT_DICE = 15
+COMBATANT_DICE = 10
 INITIATIVE_LOSER_PENALTY = 0.5  # fraction of dice the initiative loser starts with (1.0 = no penalty)
 END_TURN_ON_ATTACKER_DAMAGE = True  # if True, attacker's turn ends immediately on taking any damage
 
@@ -214,10 +214,11 @@ def _letter(m):
     return _LETTER[m]
 
 
-def choose_attack(strat, attacker):
+def choose_attack(strat, attacker, defender=None):
     r = random.random()
     p_dodge = strat.dodge_prob_atk
-    p_feint = (1 - p_dodge) * strat.feint_prob
+    defender_defenseless = defender is not None and defender.reserve <= 0
+    p_feint = 0 if defender_defenseless else (1 - p_dodge) * strat.feint_prob
     p_da = (1 - p_dodge) * (1 - strat.feint_prob) * strat.da_prob if DECEPTIVE_ATTACK_ENABLED else 0
     if r < p_dodge:
         return Maneuver.DODGE, _int_commit(strat.dodge_commit_atk_frac, attacker.reserve)
@@ -323,7 +324,7 @@ def run_combat(strat_a, strat_b, hd_a=COMBATANT_DICE, hd_b=COMBATANT_DICE, max_t
                 break
             if atk_state.reserve < 1:
                 break
-            am, ac = choose_attack(atk_strat, atk_state)
+            am, ac = choose_attack(atk_strat, atk_state, def_state)
             if ac < 1 or ac > atk_state.reserve:
                 break
             dm, dc = choose_defense(def_strat, def_state, ac)
