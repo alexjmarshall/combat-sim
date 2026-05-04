@@ -11,6 +11,7 @@ export function defaultSettings() {
     human_role: "random",
     ai_difficulty: "medium",
     exchange_mode: "simultaneous",
+    end_turn_on_attacker_damage: true,
   };
 }
 
@@ -55,6 +56,7 @@ export function settingsFromForm(form) {
   if (!["attacker", "defender", "random"].includes(s.human_role)) s.human_role = "random";
   if (!["easy", "medium", "hard"].includes(s.ai_difficulty)) s.ai_difficulty = "medium";
   if (!["simultaneous", "sequential"].includes(s.exchange_mode)) s.exchange_mode = "simultaneous";
+  s.end_turn_on_attacker_damage = toBool(form.end_turn_on_attacker_damage ?? true);
 
   return s;
 }

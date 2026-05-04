@@ -403,6 +403,11 @@ export class GameSession {
     if (atkState.totalHd <= 0) { this._enterGameOver(defIdx); return; }
     if (defState.totalHd <= 0) { this._enterGameOver(atkIdx); return; }
 
+    if (this.settings.end_turn_on_attacker_damage && result.attackerDamageTaken > 0) {
+      this._endTurn();
+      return;
+    }
+
     if (atkIdx !== this.humanIdx) {
       this._aiContinueDecision = atkState.reserve < 1
         ? false

@@ -58,6 +58,7 @@ async function populateSettingsForm() {
   form.human_role.value = s.human_role;
   form.ai_difficulty.value = s.ai_difficulty;
   form.exchange_mode.value = s.exchange_mode;
+  form.end_turn_on_attacker_damage.checked = s.end_turn_on_attacker_damage;
 }
 
 async function onSaveSettings(e) {
@@ -73,6 +74,7 @@ async function onSaveSettings(e) {
     human_role: form.human_role.value,
     ai_difficulty: form.ai_difficulty.value,
     exchange_mode: form.exchange_mode.value,
+    end_turn_on_attacker_damage: form.end_turn_on_attacker_damage.checked,
   };
   const statusEl = $("#settings-status");
   function settingsFlash(msg, isError = false) {
