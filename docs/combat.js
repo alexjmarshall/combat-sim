@@ -42,7 +42,7 @@ export class CombatantState {
   }
 
   applyDamageDefault(damage) {
-    let remaining = damage;
+    let remaining = damage < 2 ? damage : damage * 3; // TEST
     let applied = 0;
     const fromExchange = Math.min(remaining, this.exchange);
     this.exchange -= fromExchange;
@@ -88,22 +88,38 @@ function _evasiveAttack(dodger, target, evasiveCommit, flags) {
   const committed = dodger.commit(evasiveCommit);
   if (committed <= 0) return 0;
   const successes = rollSuccesses(committed);
-  const damage = successes > 0 ? Math.max(0, successes + Math.min(weaponBonus, committed) - armorBonus) : 0;
+  const damage =
+    successes > 0
+      ? Math.max(0, successes + Math.min(weaponBonus, committed) - armorBonus)
+      : 0;
   const applied = target.applyDamageDefault(damage);
   dodger.clearExchangeToUsed();
   return applied;
 }
 
-function _resolveDodge(attacker, defender, atkCommit, defCommit,
-                       atkManeuver, defManeuver,
-                       atkFollowupCommit, defFollowupCommit,
-                       atkEvasiveCommit, defEvasiveCommit, result, flags) {
+function _resolveDodge(
+  attacker,
+  defender,
+  atkCommit,
+  defCommit,
+  atkManeuver,
+  defManeuver,
+  atkFollowupCommit,
+  defFollowupCommit,
+  atkEvasiveCommit,
+  defEvasiveCommit,
+  result,
+  flags,
+) {
   const { armorBonus, weaponBonus } = flags;
 
   if (atkManeuver === Maneuver.DODGE) attacker.clearExchangeToUsed();
   if (defManeuver === Maneuver.DODGE) defender.clearExchangeToUsed();
 
-  if (atkManeuver === Maneuver.DODGE && (defManeuver === Maneuver.DODGE || defManeuver === Maneuver.PARRY)) {
+  if (
+    atkManeuver === Maneuver.DODGE &&
+    (defManeuver === Maneuver.DODGE || defManeuver === Maneuver.PARRY)
+  ) {
     if (defManeuver === Maneuver.PARRY) defender.clearExchangeToUsed();
     return result;
   }
@@ -112,7 +128,11 @@ function _resolveDodge(attacker, defender, atkCommit, defCommit,
   }
 
   // SA / DA (atk) vs Dodge (def)
-  if ((atkManeuver === Maneuver.SIMPLE_ATTACK || atkManeuver === Maneuver.DECEPTIVE_ATTACK) && defManeuver === Maneuver.DODGE) {
+  if (
+    (atkManeuver === Maneuver.SIMPLE_ATTACK ||
+      atkManeuver === Maneuver.DECEPTIVE_ATTACK) &&
+    defManeuver === Maneuver.DODGE
+  ) {
     result.atkRolled = attacker.exchange;
     const atkSuccesses = rollSuccesses(attacker.exchange);
     result.atkSuccesses = atkSuccesses;
@@ -125,9 +145,22 @@ function _resolveDodge(attacker, defender, atkCommit, defCommit,
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
-      result.attackerDamageTaken += _evasiveAttack(defender, attacker, defEvasiveCommit, flags);
+      result.attackerDamageTaken += _evasiveAttack(
+        defender,
+        attacker,
+        defEvasiveCommit,
+        flags,
+      );
     } else {
-      const damage = atkSuccesses > 0 ? Math.max(0, atkSuccesses + Math.min(weaponBonus, atkDiceForBonus) - armorBonus) : 0;
+      const damage =
+        atkSuccesses > 0
+          ? Math.max(
+              0,
+              atkSuccesses +
+                Math.min(weaponBonus, atkDiceForBonus) -
+                armorBonus,
+            )
+          : 0;
       result.defenderDamageTaken = defender.applyDamageDefault(damage);
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
@@ -149,9 +182,22 @@ function _resolveDodge(attacker, defender, atkCommit, defCommit,
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
-      result.defenderDamageTaken += _evasiveAttack(attacker, defender, atkEvasiveCommit, flags);
+      result.defenderDamageTaken += _evasiveAttack(
+        attacker,
+        defender,
+        atkEvasiveCommit,
+        flags,
+      );
     } else {
-      const damage = defSuccesses > 0 ? Math.max(0, defSuccesses + Math.min(weaponBonus, defDiceForBonus) - armorBonus) : 0;
+      const damage =
+        defSuccesses > 0
+          ? Math.max(
+              0,
+              defSuccesses +
+                Math.min(weaponBonus, defDiceForBonus) -
+                armorBonus,
+            )
+          : 0;
       result.attackerDamageTaken = attacker.applyDamageDefault(damage);
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
@@ -175,9 +221,22 @@ function _resolveDodge(attacker, defender, atkCommit, defCommit,
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
-      result.attackerDamageTaken += _evasiveAttack(defender, attacker, defEvasiveCommit, flags);
+      result.attackerDamageTaken += _evasiveAttack(
+        defender,
+        attacker,
+        defEvasiveCommit,
+        flags,
+      );
     } else {
-      const damage = followupSuccesses > 0 ? Math.max(0, followupSuccesses + Math.min(weaponBonus, atkDiceForBonus) - armorBonus) : 0;
+      const damage =
+        followupSuccesses > 0
+          ? Math.max(
+              0,
+              followupSuccesses +
+                Math.min(weaponBonus, atkDiceForBonus) -
+                armorBonus,
+            )
+          : 0;
       result.defenderDamageTaken = defender.applyDamageDefault(damage);
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
@@ -215,23 +274,40 @@ export function resolveExchange(opts) {
   attacker.commit(atkCommit);
   defender.commit(defCommit);
 
-  let defM = defManeuver === Maneuver.DEFENSELESS ? Maneuver.PARRY : defManeuver;
+  let defM =
+    defManeuver === Maneuver.DEFENSELESS ? Maneuver.PARRY : defManeuver;
 
   if (atkManeuver === Maneuver.DECEPTIVE_ATTACK && deceptiveAttack) {
-    const bonus = Math.max(0, Math.min(atkBonus, Math.floor(attacker.reserve / 2)));
+    const bonus = Math.max(
+      0,
+      Math.min(atkBonus, Math.floor(attacker.reserve / 2)),
+    );
     attacker.reserve -= 2 * bonus;
     attacker.exchange += bonus;
     attacker.used += bonus;
   }
 
   if (atkManeuver === Maneuver.DODGE || defM === Maneuver.DODGE) {
-    return _resolveDodge(attacker, defender, atkCommit, defCommit,
-                         atkManeuver, defM,
-                         atkFollowupCommit, defFollowupCommit,
-                         atkEvasiveCommit, defEvasiveCommit, result, flags);
+    return _resolveDodge(
+      attacker,
+      defender,
+      atkCommit,
+      defCommit,
+      atkManeuver,
+      defM,
+      atkFollowupCommit,
+      defFollowupCommit,
+      atkEvasiveCommit,
+      defEvasiveCommit,
+      result,
+      flags,
+    );
   }
 
-  if (atkManeuver === Maneuver.SIMPLE_ATTACK || atkManeuver === Maneuver.DECEPTIVE_ATTACK) {
+  if (
+    atkManeuver === Maneuver.SIMPLE_ATTACK ||
+    atkManeuver === Maneuver.DECEPTIVE_ATTACK
+  ) {
     const atkRolled = attacker.exchange;
     const atkSuccesses = rollSuccesses(atkRolled);
     result.atkRolled = atkRolled;
@@ -239,39 +315,69 @@ export function resolveExchange(opts) {
 
     if (defM === Maneuver.PARRY) {
       const defRolled = defender.exchange;
-      const defSuccesses = rollSuccesses(defRolled);
+      let defSuccesses = rollSuccesses(defRolled) * 2; // TEST;
       result.defRolled = defRolled;
       result.defSuccesses = defSuccesses;
-      const damage = atkSuccesses > defSuccesses
-        ? Math.max(0, (atkSuccesses - defSuccesses) + Math.min(weaponBonus, atkRolled) - armorBonus)
-        : 0;
+      const damage =
+        atkSuccesses > defSuccesses
+          ? Math.max(
+              0,
+              atkSuccesses -
+                defSuccesses +
+                Math.min(weaponBonus, atkRolled) -
+                armorBonus,
+            )
+          : 0;
       result.defenderDamageTaken = defender.applyDamageDefault(damage);
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
+      defSuccesses = Math.floor(defSuccesses / 2); // TEST
       if (riposte && defSuccesses > atkSuccesses) {
-        const riposteDamage = Math.max(0, (defSuccesses - atkSuccesses) + Math.min(weaponBonus, defRolled) - armorBonus);
+        const riposteDamage = Math.max(
+          0,
+          defSuccesses -
+            atkSuccesses +
+            Math.min(weaponBonus, defRolled) -
+            armorBonus,
+        );
         if (riposteDamage > 0) {
-          result.attackerDamageTaken = attacker.applyDamageDefault(riposteDamage);
+          result.attackerDamageTaken =
+            attacker.applyDamageDefault(riposteDamage);
         }
       }
     } else if (defM === Maneuver.COUNTER) {
-      const totalAtkDmg = atkSuccesses > 0 ? Math.max(0, atkSuccesses + Math.min(weaponBonus, atkRolled) - armorBonus) : 0;
+      const totalAtkDmg =
+        atkSuccesses > 0
+          ? Math.max(
+              0,
+              atkSuccesses + Math.min(weaponBonus, atkRolled) - armorBonus,
+            )
+          : 0;
       const dmgToExchange = Math.min(totalAtkDmg, defender.exchange);
       defender.exchange -= dmgToExchange;
       defender.lost += dmgToExchange;
       const remainingAtkDmg = totalAtkDmg - dmgToExchange;
       let appliedAtkDmg = dmgToExchange;
-      if (remainingAtkDmg > 0) appliedAtkDmg += defender.applyDamageDefault(remainingAtkDmg);
+      if (remainingAtkDmg > 0)
+        appliedAtkDmg += defender.applyDamageDefault(remainingAtkDmg);
       result.defenderDamageTaken = appliedAtkDmg;
       if (defender.totalHd > 0 && defender.exchange > 0) {
         const defRolled = defender.exchange;
         const defSuccesses = rollSuccesses(defRolled);
         result.defRolled = defRolled;
         result.defSuccesses = defSuccesses;
-        const stopHitBonus = (stopHit && defSuccesses >= atkSuccesses) ? atkSuccesses : 0;
-        const counterDmg = defSuccesses > 0
-          ? Math.max(0, defSuccesses + Math.min(weaponBonus, defender.exchange) - armorBonus + stopHitBonus)
-          : 0;
+        const stopHitBonus =
+          stopHit && defSuccesses >= atkSuccesses ? atkSuccesses : 0;
+        const counterDmg =
+          defSuccesses > 0
+            ? Math.max(
+                0,
+                defSuccesses +
+                  Math.min(weaponBonus, defender.exchange) -
+                  armorBonus +
+                  stopHitBonus,
+              )
+            : 0;
         result.attackerDamageTaken = attacker.applyDamageDefault(counterDmg);
       }
       attacker.clearExchangeToUsed();
@@ -287,7 +393,15 @@ export function resolveExchange(opts) {
         result.followupRolled = atkFollowupCommit;
         const followupSuccesses = rollSuccesses(atkFollowupCommit);
         result.followupSuccesses = followupSuccesses;
-        const damage = followupSuccesses > 0 ? Math.max(0, followupSuccesses + Math.min(weaponBonus, attacker.exchange) - armorBonus) : 0;
+        const damage =
+          followupSuccesses > 0
+            ? Math.max(
+                0,
+                followupSuccesses +
+                  Math.min(weaponBonus, attacker.exchange) -
+                  armorBonus,
+              )
+            : 0;
         result.defenderDamageTaken = defender.applyDamageDefault(damage);
         attacker.clearExchangeToUsed();
       }
@@ -298,18 +412,35 @@ export function resolveExchange(opts) {
       const defSuccesses = rollSuccesses(defCommit);
       result.defRolled = defRolled;
       result.defSuccesses = defSuccesses;
-      const totalCounterDmg = defSuccesses > 0 ? Math.max(0, defSuccesses + Math.min(weaponBonus, defender.exchange) - armorBonus) : 0;
+      const totalCounterDmg =
+        defSuccesses > 0
+          ? Math.max(
+              0,
+              defSuccesses +
+                Math.min(weaponBonus, defender.exchange) -
+                armorBonus,
+            )
+          : 0;
       const dmgToExchange = Math.min(totalCounterDmg, attacker.exchange);
       attacker.exchange -= dmgToExchange;
       attacker.lost += dmgToExchange;
       const remainingDefDmg = totalCounterDmg - dmgToExchange;
       let appliedCounterDmg = dmgToExchange;
-      if (remainingDefDmg > 0) appliedCounterDmg += attacker.applyDamageDefault(remainingDefDmg);
+      if (remainingDefDmg > 0)
+        appliedCounterDmg += attacker.applyDamageDefault(remainingDefDmg);
       result.attackerDamageTaken = appliedCounterDmg;
       if (attacker.totalHd > 0 && attacker.exchange > 0) {
         const fuSuccesses = rollSuccesses(attacker.exchange);
         result.followupSuccesses = fuSuccesses;
-        const dmg = fuSuccesses > 0 ? Math.max(0, fuSuccesses + Math.min(weaponBonus, attacker.exchange) - armorBonus) : 0;
+        const dmg =
+          fuSuccesses > 0
+            ? Math.max(
+                0,
+                fuSuccesses +
+                  Math.min(weaponBonus, attacker.exchange) -
+                  armorBonus,
+              )
+            : 0;
         result.defenderDamageTaken = defender.applyDamageDefault(dmg);
       }
       attacker.clearExchangeToUsed();
