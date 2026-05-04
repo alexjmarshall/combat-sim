@@ -17,6 +17,7 @@ export class CombatantState {
     this.exchange = 0;
     this.used = 0;
     this.lost = 0;
+    this.phantom = 0; // temporarily unavailable dice (initiative penalty); drains to lost if hit
   }
 
   get totalHd() {
@@ -27,6 +28,7 @@ export class CombatantState {
     this.reserve = this.totalHd;
     this.used = 0;
     this.exchange = 0;
+    this.phantom = 0;
   }
 
   commit(dice) {
@@ -60,7 +62,14 @@ export class CombatantState {
       const fromUsed = Math.min(remaining, this.used);
       this.used -= fromUsed;
       this.lost += fromUsed;
+      remaining -= fromUsed;
       applied += fromUsed;
+    }
+    if (remaining > 0) {
+      const fromPhantom = Math.min(remaining, this.phantom);
+      this.phantom -= fromPhantom;
+      this.lost += fromPhantom;
+      applied += fromPhantom;
     }
     return applied;
   }

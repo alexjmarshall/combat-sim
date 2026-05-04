@@ -70,7 +70,10 @@ export class GameSession {
 
     this.attackerIdx = initiativeWinner;
     const loserIdx = 1 - initiativeWinner;
-    this.states[loserIdx].reserve = Math.ceil(this.states[loserIdx].reserve * settings.initiative_loser_penalty);
+    const loser = this.states[loserIdx];
+    const availableHd = Math.ceil(hd * settings.initiative_loser_penalty);
+    loser.reserve = availableHd;
+    loser.phantom = hd - availableHd;
 
     this.turn = 0;
     this.exchangeInTurn = 0;
@@ -235,6 +238,7 @@ export class GameSession {
       exchange: s.exchange,
       used: s.used,
       lost: s.lost,
+      phantom: s.phantom,
       total_hd: s.totalHd,
     };
   }
