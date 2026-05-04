@@ -44,7 +44,12 @@ export class CombatantState {
   }
 
   applyDamageDefault(damage) {
-    let remaining = damage < 2 ? damage : damage * 3; // TEST
+    if (damage > 2) {
+      damage = damage * 3; // TEST
+    } else if (damage > 1) {
+      damage = damage * 2;
+    }
+    let remaining = damage;
     let applied = 0;
     const fromExchange = Math.min(remaining, this.exchange);
     this.exchange -= fromExchange;

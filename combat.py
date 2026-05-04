@@ -54,7 +54,11 @@ class CombatantState:
         self.exchange = 0
     
     def apply_damage_default(self, damage):
-        remaining = damage if damage < 2 else damage * 3 # TEST
+        if damage > 2:
+            damage = damage * 3  # TEST
+        elif damage > 1:
+            damage = damage * 2
+        remaining = damage
         applied = 0
         from_exchange = min(remaining, self.exchange)
         self.exchange -= from_exchange

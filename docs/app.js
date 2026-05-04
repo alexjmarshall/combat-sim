@@ -79,7 +79,9 @@ async function onSaveSettings(e) {
     statusEl.textContent = msg;
     statusEl.style.color = isError ? "#ef4444" : "";
     clearTimeout(statusEl._timer);
-    statusEl._timer = setTimeout(() => { statusEl.textContent = ""; }, 2000);
+    statusEl._timer = setTimeout(() => {
+      statusEl.textContent = "";
+    }, 2000);
   }
   try {
     api.saveSettings(payload);
@@ -135,11 +137,20 @@ function renderCombatants() {
     let s = state.states[i];
     // Attacker's committed dice don't move on the server until exchange resolution.
     // Reflect the pending commit visually during maneuver selection.
-    if ((state.phase === "await_atk_maneuver" || state.phase === "await_def_commit" || state.phase === "await_def_maneuver") && i === atk) {
+    if (
+      (state.phase === "await_atk_maneuver" ||
+        state.phase === "await_def_commit" ||
+        state.phase === "await_def_maneuver") &&
+      i === atk
+    ) {
       const n = state.prompt.atk_commit;
       s = { ...s, reserve: s.reserve - n, exchange: s.exchange + n };
     }
-    if ((state.phase === "await_atk_maneuver" || state.phase === "await_def_maneuver") && i !== atk) {
+    if (
+      (state.phase === "await_atk_maneuver" ||
+        state.phase === "await_def_maneuver") &&
+      i !== atk
+    ) {
       const n = state.prompt.def_commit;
       s = { ...s, reserve: s.reserve - n, exchange: s.exchange + n };
     }
@@ -147,7 +158,9 @@ function renderCombatants() {
     root.classList.toggle("is-human", isHuman);
     root.classList.toggle("is-ai", !isHuman);
     root.classList.toggle("is-attacker", i === atk);
-    root.querySelector(".combatant-name").textContent = isHuman ? "You" : "Your Opponent";
+    root.querySelector(".combatant-name").textContent = isHuman
+      ? "You"
+      : "Your Opponent";
     const role = i === atk ? "Attacker" : "Defender";
     const aiTag = !isHuman ? ` · AI (${state.settings.ai_difficulty})` : "";
     root.querySelector(".role-badge").textContent = `${role}${aiTag}`;
@@ -322,8 +335,10 @@ function renderAtkManeuver(panel, p) {
     btn.addEventListener("click", async () => {
       const m = btn.dataset.m;
       const body = { maneuver: m };
-      if (m === "Feint") body.followup = parseInt($("#feint-followup").value, 10) || 0;
-      if (m === "Dodge") body.dodge_roll = parseInt($("#dodge-roll-atk").value, 10) || 0;
+      if (m === "Feint")
+        body.followup = parseInt($("#feint-followup").value, 10) || 0;
+      if (m === "Dodge")
+        body.dodge_roll = parseInt($("#dodge-roll-atk").value, 10) || 0;
       await postAction(api.atkManeuver, body);
     });
   });
@@ -353,7 +368,8 @@ function renderDefManeuver(panel, p) {
     btn.addEventListener("click", async () => {
       const m = btn.dataset.m;
       const body = { maneuver: m };
-      if (m === "Dodge") body.dodge_roll = parseInt($("#dodge-roll-def").value, 10) || 0;
+      if (m === "Dodge")
+        body.dodge_roll = parseInt($("#dodge-roll-def").value, 10) || 0;
       await postAction(api.defManeuver, body);
     });
   });
@@ -423,38 +439,47 @@ function renderRevealHTML(x) {
   const human = state.human_idx;
   const youAreAtk = x.attacker_idx === human;
 
-  const you  = youAreAtk ? "you"             : "your opponent";
-  const opp  = youAreAtk ? "your opponent"   : "you";
-  const You  = youAreAtk ? "You"             : "Your opponent";
-  const Opp  = youAreAtk ? "Your opponent"   : "You";
-  const your = youAreAtk ? "your"            : "your opponent's";
+  const you = youAreAtk ? "you" : "your opponent";
+  const opp = youAreAtk ? "your opponent" : "you";
+  const You = youAreAtk ? "You" : "Your opponent";
+  const Opp = youAreAtk ? "Your opponent" : "You";
+  const your = youAreAtk ? "your" : "your opponent's";
   const oppY = youAreAtk ? "your opponent's" : "your";
 
-  const fuD   = x.atk_followup;
-  const dodR  = x.dodge_rolled;
+  const fuD = x.atk_followup;
+  const dodR = x.dodge_rolled;
   const dodOK = x.dodge_succeeded;
   const dmgDef = x.damage_to_def;
   const dmgAtk = x.damage_to_atk;
 
-  function hits(n) { return n === 1 ? "1 hit" : `${n} hits`; }
+  function hits(n) {
+    return n === 1 ? "1 hit" : `${n} hits`;
+  }
   // Conjugate verb for attacker subject (2nd person when youAreAtk, else 3rd)
-  function av(base, irr) { return youAreAtk ? base : (irr || base + "s"); }
+  function av(base, irr) {
+    return youAreAtk ? base : irr || base + "s";
+  }
   // Conjugate verb for defender subject (3rd person when youAreAtk, else 2nd)
-  function dv(base, irr) { return youAreAtk ? (irr || base + "s") : base; }
+  function dv(base, irr) {
+    return youAreAtk ? irr || base + "s" : base;
+  }
 
   const am = x.atk_maneuver;
   const dm = x.def_maneuver;
 
   const W = state.settings.weapon_bonus;
   const A = state.settings.armor_bonus;
-  function rawDmg(h, capDice) { return Math.max(0, h + Math.min(W, capDice) - A); }
+  function rawDmg(h, capDice) {
+    return Math.max(0, h + Math.min(W, capDice) - A);
+  }
   function woundLabel(raw) {
     if (raw >= 3) return "Grievous Wound";
     if (raw === 2) return "Serious Wound";
     return null;
   }
 
-  let rawToDef = 0, rawToAtk = 0;
+  let rawToDef = 0,
+    rawToAtk = 0;
   if (am === "Attack" && dm === "Parry") {
     const net = x.atk_successes - x.def_successes;
     if (net >= 1) rawToDef = rawDmg(net, x.atk_rolled);
@@ -462,16 +487,21 @@ function renderRevealHTML(x) {
     if (x.atk_successes >= 1) rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
     if (x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
   } else if (am === "Attack" && dm === "Dodge") {
-    if (!dodOK && x.atk_successes >= 1) rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
+    if (!dodOK && x.atk_successes >= 1)
+      rawToDef = rawDmg(x.atk_successes, x.atk_rolled);
   } else if (am === "Feint" && dm === "Parry") {
-    if (x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+    if (x.followup_successes >= 1)
+      rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
   } else if (am === "Feint" && dm === "Counter") {
     if (x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
-    if (x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+    if (x.followup_successes >= 1)
+      rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
   } else if (am === "Dodge" && dm === "Counter") {
-    if (!dodOK && x.def_successes >= 1) rawToAtk = rawDmg(x.def_successes, x.def_rolled);
+    if (!dodOK && x.def_successes >= 1)
+      rawToAtk = rawDmg(x.def_successes, x.def_rolled);
   } else if (am === "Feint" && dm === "Dodge") {
-    if (!dodOK && x.followup_successes >= 1) rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
+    if (!dodOK && x.followup_successes >= 1)
+      rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
   } else if (dm === "Defenseless") {
     if (am === "Feint" && x.followup_rolled > 0 && x.followup_successes >= 1)
       rawToDef = rawDmg(x.followup_successes, x.followup_rolled);
@@ -480,110 +510,148 @@ function renderRevealHTML(x) {
   }
 
   const rawPlayerDealt = youAreAtk ? rawToDef : rawToAtk;
-  const rawPlayerTook  = youAreAtk ? rawToAtk : rawToDef;
+  const rawPlayerTook = youAreAtk ? rawToAtk : rawToDef;
   const dealtLabel = woundLabel(rawPlayerDealt);
-  const tookLabel  = woundLabel(rawPlayerTook);
-  function dmgStr(hd, label) { return label ? `a ${label}` : `${hd} damage`; }
+  const tookLabel = woundLabel(rawPlayerTook);
+  function dmgStr(hd, label) {
+    return label ? `a ${label}` : `${hd} damage`;
+  }
 
   const paras = [];
 
   if (am === "Attack" && dm === "Parry") {
-    paras.push(`${You} ${av("press", "presses")} the attack. ${Opp} ${dv("stand")} firm and ${dv("parry", "parries")}.`);
-    if (dmgDef > 0) paras.push(`${youAreAtk ? "Your" : "Their"} blow breaks through.`);
-    else            paras.push(`The parry holds.`);
-  }
-
-  else if (am === "Attack" && dm === "Counter") {
-    paras.push(`${You} ${av("drive")} in. ${Opp} ${dv("meet", "meets")} it with a counter.`);
-  }
-
-  else if (am === "Attack" && dm === "Dodge") {
-    paras.push(`${You} ${av("press", "presses")} forward. ${Opp} ${dv("try", "tries")} to get clear.`);
-    if (dodOK) paras.push(`${Opp} ${dv("slip", "slips")} outside ${your} reach.`);
-    else       paras.push(`The dodge falls short.`);
-  }
-
-  else if (am === "Feint" && dm === "Parry") {
-    paras.push(`${You} ${av("feint", "feints")}, drawing ${oppY} guard wide. ${Opp} ${dv("commit", "commits")} to a parry.`);
-    if (fuD > 0) paras.push(`${You} ${av("make", "makes")} a follow-up attack.`);
-    else         paras.push(`${You} ${av("leave", "leaves")} no follow-up — the feint ends without a real thrust.`);
-  }
-
-  else if (am === "Feint" && dm === "Counter") {
-    paras.push(`${You} ${av("feint", "feints")}, trying to bait a response. ${Opp} ${dv("counter-attack", "counter-attacks")} immediately instead.`);
+    paras.push(
+      `${You} ${av("press", "presses")} the attack. ${Opp} ${dv("stand")} firm and ${dv("parry", "parries")}.`,
+    );
+    if (dmgDef > 0)
+      paras.push(`${youAreAtk ? "Your" : "Their"} blow breaks through.`);
+    else paras.push(`The parry holds.`);
+  } else if (am === "Attack" && dm === "Counter") {
+    paras.push(
+      `${You} ${av("drive")} in. ${Opp} ${dv("meet", "meets")} it with a counter.`,
+    );
+  } else if (am === "Attack" && dm === "Dodge") {
+    paras.push(
+      `${You} ${av("press", "presses")} forward. ${Opp} ${dv("try", "tries")} to get clear.`,
+    );
+    if (dodOK)
+      paras.push(`${Opp} ${dv("slip", "slips")} outside ${your} reach.`);
+    else paras.push(`The dodge falls short.`);
+  } else if (am === "Feint" && dm === "Parry") {
+    paras.push(
+      `${You} ${av("feint", "feints")}, drawing ${oppY} guard wide. ${Opp} ${dv("commit", "commits")} to a parry.`,
+    );
+    if (fuD > 0)
+      paras.push(`${You} ${av("make", "makes")} a follow-up attack.`);
+    else
+      paras.push(
+        `${You} ${av("leave", "leaves")} no follow-up — the feint ends without a real thrust.`,
+      );
+  } else if (am === "Feint" && dm === "Counter") {
+    paras.push(
+      `${You} ${av("feint", "feints")}, trying to bait a response. ${Opp} ${dv("counter-attack", "counter-attacks")} immediately instead.`,
+    );
     if (fuD === 0) paras.push(`With no follow-up, ${your} feint buys nothing.`);
-  }
-
-  else if (am === "Feint" && dm === "Dodge") {
-    paras.push(`${You} ${av("feint", "feints")}, setting up a follow-through. ${Opp} ${dv("don't", "doesn't")} wait and ${dv("try", "tries")} to clear the distance.`);
-    if (dodOK)        paras.push(`${Opp} ${dv("clear", "clears")} the angle in time.`);
-    else if (fuD > 0) paras.push(`The dodge misfires — ${you} ${av("make", "makes")} a follow-up attack.`);
-    else              paras.push(`The dodge misfires, but ${you} ${av("have", "has")} no follow-up to exploit it.`);
-  }
-
-  else if (am === "Dodge" && dm === "Parry") {
-    paras.push(`${You} ${av("break")} off. ${Opp} ${dv("brace", "braces")} for a blow that never comes.`);
+  } else if (am === "Feint" && dm === "Dodge") {
+    paras.push(
+      `${You} ${av("feint", "feints")}, setting up a follow-through. ${Opp} ${dv("don't", "doesn't")} wait and ${dv("try", "tries")} to clear the distance.`,
+    );
+    if (dodOK) paras.push(`${Opp} ${dv("clear", "clears")} the angle in time.`);
+    else if (fuD > 0)
+      paras.push(
+        `The dodge misfires — ${you} ${av("make", "makes")} a follow-up attack.`,
+      );
+    else
+      paras.push(
+        `The dodge misfires, but ${you} ${av("have", "has")} no follow-up to exploit it.`,
+      );
+  } else if (am === "Dodge" && dm === "Parry") {
+    paras.push(
+      `${You} ${av("break")} off. ${Opp} ${dv("brace", "braces")} for a blow that never comes.`,
+    );
     if (dodR > 0) {
       if (dodOK) paras.push(`${You} ${av("disengage", "disengages")} cleanly.`);
-      else       paras.push(`${youAreAtk ? "Your" : "Their"} withdrawal is too slow.`);
+      else
+        paras.push(`${youAreAtk ? "Your" : "Their"} withdrawal is too slow.`);
     }
-  }
-
-  else if (am === "Dodge" && dm === "Counter") {
-    paras.push(`${You} ${av("try", "tries")} to disengage. ${Opp} ${dv("read", "reads")} the opening and ${dv("counter", "counters")}.`);
+  } else if (am === "Dodge" && dm === "Counter") {
+    paras.push(
+      `${You} ${av("try", "tries")} to disengage. ${Opp} ${dv("read", "reads")} the opening and ${dv("counter", "counters")}.`,
+    );
     if (dodR > 0) {
-      if (dodOK) paras.push(`${You} ${av("slip", "slips")} away before the counter connects.`);
-      else       paras.push(`${youAreAtk ? "Their" : "Your"} counter finds ${you} mid-retreat.`);
+      if (dodOK)
+        paras.push(
+          `${You} ${av("slip", "slips")} away before the counter connects.`,
+        );
+      else
+        paras.push(
+          `${youAreAtk ? "Their" : "Your"} counter finds ${you} mid-retreat.`,
+        );
     }
-  }
-
-  else if (am === "Dodge" && dm === "Dodge") {
+  } else if (am === "Dodge" && dm === "Dodge") {
     paras.push(`Both combatants break away at the same moment.`);
     paras.push(`The exchange dissolves without a blow struck.`);
-  }
-
-  else if (dm === "Defenseless") {
-    paras.push(youAreAtk
-      ? `You attack a defenseless opponent.`
-      : `Your opponent attacks you while you're defenseless.`);
-  }
-
-  else {
+  } else if (dm === "Defenseless") {
+    paras.push(
+      youAreAtk
+        ? `You attack a defenseless opponent.`
+        : `Your opponent attacks you while you're defenseless.`,
+    );
+  } else {
     paras.push(`${You} ${av("use", "uses")} ${am} against ${oppY} ${dm}.`);
   }
 
   // Always end with an explicit hit/miss result from the player's perspective
   const playerDealt = youAreAtk ? dmgDef : dmgAtk;
-  const playerTook  = youAreAtk ? dmgAtk : dmgDef;
-  if (playerDealt > 0 && playerTook > 0) paras.push(`You deal ${dmgStr(playerDealt, dealtLabel)} and take ${dmgStr(playerTook, tookLabel)}.`);
-  else if (playerDealt > 0)              paras.push(`You deal ${dmgStr(playerDealt, dealtLabel)}.`);
-  else if (playerTook > 0)               paras.push(`You take ${dmgStr(playerTook, tookLabel)}.`);
-  else                                   paras.push(`No damage.`);
+  const playerTook = youAreAtk ? dmgAtk : dmgDef;
+  if (playerDealt > 0 && playerTook > 0)
+    paras.push(
+      `You deal ${dmgStr(playerDealt, dealtLabel)} and take ${dmgStr(playerTook, tookLabel)}.`,
+    );
+  else if (playerDealt > 0)
+    paras.push(`You deal ${dmgStr(playerDealt, dealtLabel)}.`);
+  else if (playerTook > 0)
+    paras.push(`You take ${dmgStr(playerTook, tookLabel)}.`);
+  else paras.push(`No damage.`);
 
   const atkShort = youAreAtk ? "You" : "Opp";
   const defShort = youAreAtk ? "Opp" : "You";
 
   const mechLines = [];
   if (x.atk_rolled > 0) {
-    mechLines.push(`${atkShort}: ${x.atk_maneuver} · ${x.atk_commit} committed · ${x.atk_successes}/${x.atk_rolled} successes`);
+    mechLines.push(
+      `${atkShort}: ${x.atk_maneuver} · ${x.atk_commit} committed · ${x.atk_successes}/${x.atk_rolled} successes`,
+    );
   } else {
-    mechLines.push(`${atkShort}: ${x.atk_maneuver} · ${x.atk_commit} committed · (no roll)`);
+    mechLines.push(
+      `${atkShort}: ${x.atk_maneuver} · ${x.atk_commit} committed · (no roll)`,
+    );
   }
   if (x.def_rolled > 0) {
     if (dm === "Parry" && am === "Attack") {
       const rawDef = Math.floor(x.def_successes / 2);
-      mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${rawDef}/${x.def_rolled} successes (×2 = ${x.def_successes} effective)`);
+      mechLines.push(
+        `${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${rawDef}/${x.def_rolled} successes (×2 = ${x.def_successes} effective)`,
+      );
     } else {
-      mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${x.def_successes}/${x.def_rolled} successes`);
+      mechLines.push(
+        `${defShort}: ${x.def_maneuver} · ${x.def_commit} committed · ${x.def_successes}/${x.def_rolled} successes`,
+      );
     }
   } else {
-    mechLines.push(`${defShort}: ${x.def_maneuver} · ${x.def_commit} committed`);
+    mechLines.push(
+      `${defShort}: ${x.def_maneuver} · ${x.def_commit} committed`,
+    );
   }
   if (x.followup_rolled > 0) {
-    mechLines.push(`Follow-up: ${x.followup_successes}/${x.followup_rolled} successes`);
+    mechLines.push(
+      `Follow-up: ${x.followup_successes}/${x.followup_rolled} successes`,
+    );
   }
   if (x.dodge_rolled > 0) {
-    mechLines.push(`Dodge: ${x.dodge_successes}/${x.dodge_rolled} — ${x.dodge_succeeded ? "passed" : "failed"}`);
+    mechLines.push(
+      `Dodge: ${x.dodge_successes}/${x.dodge_rolled} — ${x.dodge_succeeded ? "passed" : "failed"}`,
+    );
   }
 
   function fmtDmg(label, hits, capDice) {
@@ -592,7 +660,7 @@ function renderRevealHTML(x) {
     const raw = Math.max(0, hits + effWep - A);
     let suffix = "";
     if (raw >= 3) suffix = ` → Grievous Wound (×3 = ${raw * 3} HD)`;
-    else if (raw === 2) suffix = ` → Serious Wound (×3 = 6 HD)`;
+    else if (raw === 2) suffix = ` → Serious Wound (×2 = 4 HD)`;
     return `${label}: ${hits} hit${hits !== 1 ? "s" : ""} + ${wepStr} wep − ${A} arm = ${raw}${suffix}`;
   }
 
@@ -601,32 +669,48 @@ function renderRevealHTML(x) {
     const net = x.atk_successes - x.def_successes;
     if (net >= 1) formulaLines.push(fmtDmg(atkShort, net, x.atk_rolled));
   } else if (am === "Attack" && dm === "Counter") {
-    if (x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
-    if (x.def_rolled > 0 && x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+    if (x.atk_successes >= 1)
+      formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+    if (x.def_rolled > 0 && x.def_successes >= 1)
+      formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
   } else if (am === "Attack" && dm === "Dodge") {
-    if (!dodOK && x.atk_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
+    if (!dodOK && x.atk_successes >= 1)
+      formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
   } else if (am === "Feint" && dm === "Parry") {
-    if (x.followup_rolled > 0 && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+    if (x.followup_rolled > 0 && x.followup_successes >= 1)
+      formulaLines.push(
+        fmtDmg(atkShort, x.followup_successes, x.followup_rolled),
+      );
   } else if (am === "Feint" && dm === "Counter") {
-    if (x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
-    if (x.followup_rolled > 0 && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+    if (x.def_successes >= 1)
+      formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+    if (x.followup_rolled > 0 && x.followup_successes >= 1)
+      formulaLines.push(
+        fmtDmg(atkShort, x.followup_successes, x.followup_rolled),
+      );
   } else if (am === "Dodge" && dm === "Counter") {
-    if (!dodOK && x.def_successes >= 1) formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
+    if (!dodOK && x.def_successes >= 1)
+      formulaLines.push(fmtDmg(defShort, x.def_successes, x.def_rolled));
   } else if (am === "Feint" && dm === "Dodge") {
-    if (!dodOK && x.followup_successes >= 1) formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+    if (!dodOK && x.followup_successes >= 1)
+      formulaLines.push(
+        fmtDmg(atkShort, x.followup_successes, x.followup_rolled),
+      );
   } else if (dm === "Defenseless") {
     if (am === "Feint" && x.followup_rolled > 0 && x.followup_successes >= 1)
-      formulaLines.push(fmtDmg(atkShort, x.followup_successes, x.followup_rolled));
+      formulaLines.push(
+        fmtDmg(atkShort, x.followup_successes, x.followup_rolled),
+      );
     else if (x.atk_successes >= 1)
       formulaLines.push(fmtDmg(atkShort, x.atk_successes, x.atk_rolled));
   }
 
   return `
     <div class="narrative-body">
-      ${paras.map(p => `<p>${p}</p>`).join("")}
+      ${paras.map((p) => `<p>${p}</p>`).join("")}
       <div class="narrative-outcome">
-        ${mechLines.map(l => `<div class="mech-line">${l}</div>`).join("")}
-        ${formulaLines.map(l => `<div class="mech-line formula-line">${l}</div>`).join("")}
+        ${mechLines.map((l) => `<div class="mech-line">${l}</div>`).join("")}
+        ${formulaLines.map((l) => `<div class="mech-line formula-line">${l}</div>`).join("")}
       </div>
     </div>
   `;
@@ -651,8 +735,10 @@ function formatLogEntry(e) {
     return `<div class="log-entry turn-end">— Turn ${e.turn} ends —</div>`;
   }
   if (e.kind === "game_over") {
-    if (e.winner_idx === null) return `<div class="log-entry game-over">Stalemate.</div>`;
-    const who = e.winner_idx === state.human_idx ? "You win!" : "Opponent wins.";
+    if (e.winner_idx === null)
+      return `<div class="log-entry game-over">Stalemate.</div>`;
+    const who =
+      e.winner_idx === state.human_idx ? "You win!" : "Opponent wins.";
     return `<div class="log-entry game-over">${who}</div>`;
   }
   if (e.kind === "exchange") {
@@ -669,8 +755,12 @@ function formatLogEntry(e) {
       const rolls = [];
       if (e.atk_rolled) rolls.push(`atk ${e.atk_successes}/${e.atk_rolled}`);
       if (e.def_rolled) rolls.push(`def ${e.def_successes}/${e.def_rolled}`);
-      if (e.followup_rolled) rolls.push(`fu ${e.followup_successes}/${e.followup_rolled}`);
-      if (e.dodge_rolled) rolls.push(`dodge ${e.dodge_successes}/${e.dodge_rolled}${e.dodge_succeeded ? "✓" : "✗"}`);
+      if (e.followup_rolled)
+        rolls.push(`fu ${e.followup_successes}/${e.followup_rolled}`);
+      if (e.dodge_rolled)
+        rolls.push(
+          `dodge ${e.dodge_successes}/${e.dodge_rolled}${e.dodge_succeeded ? "✓" : "✗"}`,
+        );
       s += ` [${rolls.join(", ")}]`;
     }
     if (e.damage_to_def > 0) s += ` → ${defL} -${e.damage_to_def}`;
