@@ -87,7 +87,16 @@ export function makeAiStrategy(difficulty) {
     s.saCommitFrac = 0.60;
     s.dodgeProbAtk = 0.08;
   }
-  return s.clip();
+  const clipped = s.clip();
+  clipped.difficulty = difficulty;
+  clipped.mediumHeuristicProb = 0.6;
+  return clipped;
+}
+
+function _heuristicsActive(strat) {
+  if (strat.difficulty === "hard") return true;
+  if (strat.difficulty === "medium") return rand() < strat.mediumHeuristicProb;
+  return false;
 }
 
 function _intCommit(fraction, reserve, minVal = 1) {
@@ -95,27 +104,69 @@ function _intCommit(fraction, reserve, minVal = 1) {
   return Math.max(minVal, Math.min(reserve, Math.round(reserve * fraction)));
 }
 
-export function chooseAttack(strat, attacker, deceptiveAttack = false) {
+// Tentative attacker maneuver chosen at commit time (before seeing defender's
+// commit). The session calls chooseAtkManeuver later — once def_commit is known —
+// to either ratify the tentative pick or override it via tactical heuristics.
+export function chooseAtkCommit(strat, attacker, deceptiveAttack = false) {
   const r = rand();
   const pDodge = strat.dodgeProbAtk;
   const pFeint = (1 - pDodge) * strat.feintProb;
   const pDa = deceptiveAttack ? (1 - pDodge) * (1 - strat.feintProb) * strat.daProb : 0;
   if (r < pDodge) {
-    return [Maneuver.DODGE, _intCommit(strat.dodgeCommitAtkFrac, attacker.reserve)];
+    return [_intCommit(strat.dodgeCommitAtkFrac, attacker.reserve), Maneuver.DODGE];
   }
   if (r < pDodge + pFeint) {
-    return [Maneuver.FEINT, _intCommit(strat.feintCommitFrac, attacker.reserve)];
+    return [_intCommit(strat.feintCommitFrac, attacker.reserve), Maneuver.FEINT];
   }
   if (r < pDodge + pFeint + pDa) {
-    return [Maneuver.DECEPTIVE_ATTACK, _intCommit(strat.daCommitFrac, attacker.reserve)];
+    return [_intCommit(strat.daCommitFrac, attacker.reserve), Maneuver.DECEPTIVE_ATTACK];
   }
-  return [Maneuver.SIMPLE_ATTACK, _intCommit(strat.saCommitFrac, attacker.reserve)];
+  return [_intCommit(strat.saCommitFrac, attacker.reserve), Maneuver.SIMPLE_ATTACK];
+}
+
+export function chooseAtkManeuver(strat, attacker, atkCommit, defCommit, tentative) {
+  if (!_heuristicsActive(strat)) return tentative;
+  const reserveAfterCommit = attacker.reserve - atkCommit;
+
+  // Rule: dodge if defender's commit is much larger AND we have >=3 dice for the
+  // dodge follow-up roll.
+  if (defCommit >= atkCommit * 2 && reserveAfterCommit >= 3) {
+    return Maneuver.DODGE;
+  }
+  // Rule: feint if we committed a small amount AND defender's commit is equal or
+  // only slightly larger.
+  const smallCommit = Math.max(2, Math.round(attacker.maxHd * 0.25));
+  if (atkCommit <= smallCommit && defCommit >= atkCommit && defCommit <= atkCommit + 2) {
+    return Maneuver.FEINT;
+  }
+  return tentative;
 }
 
 export function chooseDefense(strat, defender, atkCommit) {
   if (defender.reserve <= 0) return [Maneuver.DEFENSELESS, 0];
   const commitRatio = atkCommit / Math.max(1, defender.reserve);
   const isLow = commitRatio < strat.commitRatioThreshold;
+
+  if (_heuristicsActive(strat)) {
+    const counterFrac = isLow ? strat.counterCommitVsLowFrac : strat.counterCommitVsHighFrac;
+    const parryFrac = isLow ? strat.parryCommitVsLowFrac : strat.parryCommitVsHighFrac;
+    const dodgeFrac = isLow ? strat.dodgeCommitVsLowFrac : strat.dodgeCommitVsHighFrac;
+    const counterCommit = _intCommit(counterFrac, defender.reserve);
+    const dodgeCommit = _intCommit(dodgeFrac, defender.reserve);
+    const parryCommit = _intCommit(parryFrac, defender.reserve);
+
+    // Rule: counter if our commit beats the attacker's.
+    if (counterCommit > atkCommit) {
+      return [Maneuver.COUNTER, counterCommit];
+    }
+    // Rule: dodge if our parry would be lower than attacker's commit AND we have
+    // >=3 dice left for the dodge follow-up roll.
+    if (parryCommit < atkCommit && defender.reserve - dodgeCommit >= 3) {
+      return [Maneuver.DODGE, dodgeCommit];
+    }
+    return [Maneuver.PARRY, parryCommit];
+  }
+
   if (isLow) {
     if (rand() < strat.dodgeProbVsLow) {
       return [Maneuver.DODGE, _intCommit(strat.dodgeCommitVsLowFrac, defender.reserve)];

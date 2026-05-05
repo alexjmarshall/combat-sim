@@ -1,5 +1,5 @@
 import { CombatantState, Maneuver, resolveExchange } from "./combat.js";
-import { makeAiStrategy, chooseAttack, chooseDefense, chooseFollowup, chooseDodgeRoll, decideContinue } from "./strategy.js";
+import { makeAiStrategy, chooseAtkCommit, chooseAtkManeuver, chooseDefense, chooseFollowup, chooseDodgeRoll, decideContinue } from "./strategy.js";
 
 export const Phase = Object.freeze({
   IDLE: "idle",
@@ -44,6 +44,7 @@ export class GameSession {
     this._defManeuver = null;
     this._atkFollowup = 0;
     this._defFollowup = 0;
+    this._atkTentative = null;
 
     this._aiContinueDecision = null;
     this._forceEndTurn = false;
@@ -118,6 +119,10 @@ export class GameSession {
     const defState = this.states[1 - this.attackerIdx];
     if (n < 0 || n > defState.reserve) throw new Error(`def_commit must be in [0, ${defState.reserve}]`);
     this._defCommit = n;
+    if (this._atkManeuver === null) {
+      const atkState = this.states[this.attackerIdx];
+      this._atkManeuver = chooseAtkManeuver(this._aiStrategy, atkState, this._atkCommit, this._defCommit, this._atkTentative);
+    }
     this.phase = Phase.AWAIT_DEF_MANEUVER;
   }
 
@@ -138,6 +143,13 @@ export class GameSession {
 
     this._atkManeuver = m;
     this._atkFollowup = atkFollowup;
+
+    if (this._defManeuver === Maneuver.DODGE) {
+      const defState = this.states[1 - this.attackerIdx];
+      const reserveAfterDefCommit = defState.reserve - this._defCommit;
+      this._defFollowup = chooseDodgeRoll(this._aiStrategy, reserveAfterDefCommit, "def", m);
+    }
+
     this._resolveNow();
   }
 
@@ -258,6 +270,7 @@ export class GameSession {
     this._defManeuver = null;
     this._atkFollowup = 0;
     this._defFollowup = 0;
+    this._atkTentative = null;
   }
 
   _requirePhase(p) {
@@ -326,18 +339,20 @@ export class GameSession {
       return;
     }
 
-    // AI attacker path
-    const [am, ac] = chooseAttack(this._aiStrategy, atkState);
+    // AI attacker path. Pick the commit (and a tentative maneuver), but defer the
+    // final maneuver choice until def_commit is known so heuristics can react.
+    const [ac, tentative] = chooseAtkCommit(this._aiStrategy, atkState);
     if (ac < 1) { this._endTurn(); return; }
     const atkCommit = Math.min(ac, atkState.reserve);
-    this._atkManeuver = am;
     this._atkCommit = atkCommit;
+    this._atkTentative = tentative;
 
     if (defState.reserve <= 0) {
       this._defManeuver = Maneuver.DEFENSELESS;
       this._defCommit = 0;
       this._defFollowup = 0;
-      if (am === Maneuver.FEINT) {
+      this._atkManeuver = chooseAtkManeuver(this._aiStrategy, atkState, atkCommit, 0, tentative);
+      if (this._atkManeuver === Maneuver.FEINT) {
         // Defender will be treated as PARRY internally; pick follow-up vs PARRY.
         this._atkFollowup = chooseFollowup(this._aiStrategy, atkState.reserve - atkCommit, Maneuver.PARRY);
       } else {
