@@ -46,6 +46,7 @@ export class GameSession {
     this._defFollowup = 0;
 
     this._aiContinueDecision = null;
+    this._forceEndTurn = false;
   }
 
   // ---- public API -------------------------------------------------------
@@ -176,6 +177,13 @@ export class GameSession {
   submitContinue(cont = null) {
     this._requirePhase(Phase.AWAIT_CONTINUE);
     if (this.winnerIdx !== null) return;
+
+    const forceEnd = this._forceEndTurn;
+    this._forceEndTurn = false;
+    if (forceEnd) {
+      this._endTurn();
+      return;
+    }
 
     if (this.attackerIdx === this.humanIdx) {
       if (cont === null) throw new Error("Must provide continue: bool");
@@ -405,14 +413,13 @@ export class GameSession {
     if (defState.totalHd <= 0) { this._enterGameOver(atkIdx); return; }
 
     if (this.settings.end_turn_on_attacker_damage && result.attackerDamageTaken > 0) {
-      this._endTurn();
-      return;
+      this._forceEndTurn = true;
     }
 
     if (atkIdx !== this.humanIdx) {
-      this._aiContinueDecision = atkState.reserve < 1
-        ? false
-        : decideContinue(this._aiStrategy, result, atkState);
+      this._aiContinueDecision = (!this._forceEndTurn && atkState.reserve >= 1)
+        ? decideContinue(this._aiStrategy, result, atkState)
+        : false;
     }
 
     this.phase = Phase.AWAIT_CONTINUE;
@@ -484,10 +491,11 @@ export class GameSession {
       const humanIsAttacker = atkIdx === this.humanIdx;
       return {
         kind: "continue",
-        human_decides: humanIsAttacker,
+        human_decides: humanIsAttacker && !this._forceEndTurn,
         ai_decision: humanIsAttacker ? null : this._aiContinueDecision,
         attacker_can_continue: this.states[atkIdx].reserve >= 1,
         attacker_idx: atkIdx,
+        force_end_turn: !!this._forceEndTurn,
       };
     }
     if (this.phase === Phase.GAME_OVER) {

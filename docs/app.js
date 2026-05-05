@@ -378,6 +378,20 @@ function renderDefManeuver(panel, p) {
 }
 
 function renderContinue(panel, p) {
+  if (p.force_end_turn) {
+    const youAreAtk = p.attacker_idx === state.human_idx;
+    const msg = youAreAtk
+      ? "You took a counter hit — your turn ends."
+      : "Your opponent took a counter hit — their turn ends.";
+    panel.innerHTML = `
+      <h3>${msg}</h3>
+      <div class="row"><button id="btn-next">Next</button></div>
+    `;
+    $("#btn-next").addEventListener("click", async () => {
+      await postAction(api["continue"], { continue: false });
+    });
+    return;
+  }
   if (p.human_decides) {
     if (!p.attacker_can_continue) {
       panel.innerHTML = `
