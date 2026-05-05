@@ -125,7 +125,8 @@ export function chooseAtkCommit(strat, attacker, deceptiveAttack = false) {
 }
 
 export function chooseAtkManeuver(strat, attacker, atkCommit, defCommit, tentative) {
-  if (!_heuristicsActive(strat)) return tentative;
+  const safeTentative = (tentative === Maneuver.FEINT && defCommit === 0) ? Maneuver.SIMPLE_ATTACK : tentative;
+  if (!_heuristicsActive(strat)) return safeTentative;
   const reserveAfterCommit = attacker.reserve - atkCommit;
 
   // Rule: dodge if defender's commit is much larger AND we have >=3 dice for the
@@ -139,7 +140,7 @@ export function chooseAtkManeuver(strat, attacker, atkCommit, defCommit, tentati
   if (atkCommit <= smallCommit && defCommit >= atkCommit && defCommit <= atkCommit + 2) {
     return Maneuver.FEINT;
   }
-  return tentative;
+  return safeTentative;
 }
 
 export function chooseDefense(strat, defender, atkCommit) {
