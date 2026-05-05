@@ -155,7 +155,7 @@ function _resolveDodge(
     const dodgeRoll = rollSuccesses(defender.exchange);
     result.dodgeSuccesses = dodgeRoll;
     const atkDiceForBonus = attacker.exchange;
-    if (dodgeRoll >= Math.max(1, armorBonus)) {
+    if (dodgeRoll >= 1) {
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
@@ -192,7 +192,7 @@ function _resolveDodge(
     const defSuccesses = rollSuccesses(defCommit);
     result.defSuccesses = defSuccesses;
     const defDiceForBonus = defender.exchange;
-    if (dodgeRoll >= Math.max(1, armorBonus)) {
+    if (dodgeRoll >= 1) {
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();
@@ -231,7 +231,7 @@ function _resolveDodge(
     const dodgeRoll = rollSuccesses(defender.exchange);
     result.dodgeSuccesses = dodgeRoll;
     const atkDiceForBonus = attacker.exchange;
-    if (dodgeRoll >= Math.max(1, armorBonus)) {
+    if (dodgeRoll >= 1) {
       result.dodgeSucceeded = true;
       attacker.clearExchangeToUsed();
       defender.clearExchangeToUsed();

@@ -147,7 +147,9 @@ export class GameSession {
     if (this._defManeuver === Maneuver.DODGE) {
       const defState = this.states[1 - this.attackerIdx];
       const reserveAfterDefCommit = defState.reserve - this._defCommit;
-      this._defFollowup = chooseDodgeRoll(this._aiStrategy, reserveAfterDefCommit, "def", m);
+      const stratRoll = chooseDodgeRoll(this._aiStrategy, reserveAfterDefCommit, "def", m);
+      const minimum = Math.floor(this._atkCommit / 2);
+      this._defFollowup = Math.min(reserveAfterDefCommit, Math.max(stratRoll, minimum));
     }
 
     this._resolveNow();
@@ -178,7 +180,9 @@ export class GameSession {
     } else if (this._atkManeuver === Maneuver.DODGE) {
       const atkState = this.states[this.attackerIdx];
       const reserveAfterAtkCommit = atkState.reserve - this._atkCommit;
-      this._atkFollowup = chooseDodgeRoll(this._aiStrategy, reserveAfterAtkCommit, "atk", m);
+      const stratRoll = chooseDodgeRoll(this._aiStrategy, reserveAfterAtkCommit, "atk", m);
+      const minimum = Math.floor(this._defCommit / 2);
+      this._atkFollowup = Math.min(reserveAfterAtkCommit, Math.max(stratRoll, minimum));
     } else {
       this._atkFollowup = 0;
     }

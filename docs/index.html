@@ -111,65 +111,136 @@
     </div>
 
     <section id="rules-panel" class="hidden">
-        <div class="settings-header">
-          <h2>Combat Rules</h2>
-          <button type="button" id="close-rules" class="secondary">✕</button>
-        </div>
-        <div class="rules-body">
-          <h3>Hit Dice</h3>
-          <p>Combatants have a pool of d6s called Hit Dice (HD). These dice serve as both your health track and your resource for attacking and defending. On their turn, combatants may spend dice on one or more attacks, as they wish. Targets spend dice to defend or counterattack. Damage directly reduces Hit Dice. Dice spent on offensive or defensive maneuvers refresh at the start of your next turn. Dice lost to damage require healing to recover.</p>
+      <div class="settings-header">
+        <h2>Combat Rules</h2>
+        <button type="button" id="close-rules" class="secondary">✕</button>
+      </div>
+      <div class="rules-body">
+        <h3>Hit Dice</h3>
+        <p>
+          Combatants have a pool of d6s called Hit Dice (HD). These dice serve
+          as both your health track and your resource for attacking and
+          defending. On their turn, combatants may spend dice on one or more
+          attacks, as they wish. Targets spend dice to defend or counterattack.
+          Damage directly reduces Hit Dice. Dice spent on offensive or defensive
+          maneuvers refresh at the start of your next turn. Dice lost to damage
+          require healing to recover.
+        </p>
 
-          <h3>Initiative and the First Turn</h3>
-          <p>Both sides roll <strong>1d6</strong> for initiative (reroll ties).</p>
-          <ul>
-            <li><strong>Winner</strong>: Takes the first turn with all Hit Dice available.</li>
-            <li><strong>Loser</strong>: Starts on the defensive with only half their Hit Dice (round up) available until their first turn.</li>
-          </ul>
+        <h3>Initiative and the First Turn</h3>
+        <p>
+          Both sides roll <strong>1d6</strong> for initiative (reroll ties).
+        </p>
+        <ul>
+          <li>
+            <strong>Winner</strong>: Takes the first turn with all Hit Dice
+            available.
+          </li>
+          <li>
+            <strong>Loser</strong>: Starts on the defensive with only half their
+            Hit Dice (round up) available until their first turn.
+          </li>
+        </ul>
 
-          <h3>The Turn Structure</h3>
-          <p>On your turn as the <strong>Attacker</strong>:</p>
-          <ol>
-            <li><strong>Refresh</strong>: Recover dice spent since your last refresh.</li>
-            <li><strong>Exchanges</strong>: Engage a target in an exchange of blows. You may keep attacking as long as you have dice available.</li>
-            <li><strong>End</strong>: Your turn ends when you <strong>take damage</strong>, <strong>decide to stop</strong>, or <strong>run out of dice</strong>.</li>
-          </ol>
+        <h3>The Turn Structure</h3>
+        <p>On your turn as the <strong>Attacker</strong>:</p>
+        <ol>
+          <li>
+            <strong>Refresh</strong>: Recover dice spent since your last
+            refresh.
+          </li>
+          <li>
+            <strong>Exchanges</strong>: Engage a target in an exchange of blows.
+            You may keep attacking as long as you have dice available.
+          </li>
+          <li>
+            <strong>End</strong>: Your turn ends when you
+            <strong>take damage</strong>, <strong>decide to stop</strong>, or
+            <strong>run out of dice</strong>.
+          </li>
+        </ol>
 
-          <h3>The Anatomy of an Exchange</h3>
-          <p>Every exchange follows this sequence:</p>
-          <ol>
-            <li><strong>Commitment</strong>: The Attacker declares how many dice they will commit. The Defender then does the same.</li>
-            <li><strong>Maneuver Selection</strong>: The Attacker secretly selects their maneuver (<strong>Attack</strong>, <strong>Feint</strong> or <strong>Dodge</strong>) as the Defender secretly selects theirs (<strong>Parry</strong>, <strong>Counter</strong> or <strong>Dodge</strong>).</li>
-            <li><strong>Reveal</strong>: Combatants simultaneously reveal their maneuvers.</li>
-            <li><strong>Resolve</strong>: Roll dice (5+ is a success), compare results, and apply damage.</li>
-          </ol>
+        <h3>The Anatomy of an Exchange</h3>
+        <p>Every exchange follows this sequence:</p>
+        <ol>
+          <li>
+            <strong>Commitment</strong>: The Attacker declares how many dice
+            they will commit. The Defender then does the same.
+          </li>
+          <li>
+            <strong>Maneuver Selection</strong>: The Attacker secretly selects
+            their maneuver (<strong>Attack</strong>, <strong>Feint</strong> or
+            <strong>Dodge</strong>) as the Defender secretly selects theirs
+            (<strong>Parry</strong>, <strong>Counter</strong> or
+            <strong>Dodge</strong>).
+          </li>
+          <li>
+            <strong>Reveal</strong>: Combatants simultaneously reveal their
+            maneuvers.
+          </li>
+          <li>
+            <strong>Resolve</strong>: Roll dice (5+ is a success), compare
+            results, and apply damage.
+          </li>
+        </ol>
 
-          <h3>Maneuvers</h3>
-          <p>Any die rolling a 5 or 6 counts as a <strong>success</strong>.</p>
+        <h3>Maneuvers</h3>
+        <p>Any die rolling a 5 or 6 counts as a <strong>success</strong>.</p>
 
-          <h4>Attacker Maneuvers</h4>
-          <ul>
-            <li><strong>Simple Attack</strong>: Roll your committed dice to deal damage equal to your successes. Against a <strong>counter</strong>, your damage lands first.</li>
-            <li><strong>Feint</strong>: Your initial commit was a decoy. Move those dice to spent and launch a follow-up attack from your reserve dice.</li>
-            <li><strong>Dodge</strong>: Abort your attack (moving your committed dice to spent) and roll from your reserve dice to evade. On <strong>1 success</strong>, you cancel 1 point of damage. On <strong>2+ successes</strong>, you take no damage at all. This is useful against a powerful <strong>counter</strong>. If the defender parried or dodged, you don't need to make a follow up roll.</li>
-          </ul>
+        <h4>Attacker Maneuvers</h4>
+        <ul>
+          <li>
+            <strong>Simple Attack</strong>: Roll your committed dice to deal
+            damage equal to your successes. Against a <strong>counter</strong>,
+            your damage lands first.
+          </li>
+          <li>
+            <strong>Feint</strong>: Your initial commit was a decoy. Move those
+            dice to spent and launch a follow-up attack from your reserve dice.
+          </li>
+          <li>
+            <strong>Dodge</strong>: Abort your attack (moving your committed
+            dice to spent) and roll from your reserve dice to evade. If you roll
+            at least 1 success, you take no damage at all. This is useful
+            against a powerful <strong>counter</strong>. If the defender parried
+            or dodged, you don't need to make a follow up roll.
+          </li>
+        </ul>
 
-          <h4>Defender Maneuvers</h4>
-          <ul>
-            <li><strong>Parry</strong>: Roll your committed dice to block or divert the blow. Each success cancels <strong>two</strong> attacker successes. Against a <strong>feint</strong>, your parry whiffs unsuccessfully (move the dice to spent without rolling).</li>
-            <li><strong>Counter</strong>: Launch an attack into the attacker. If they <strong>feinted</strong>, you attack with your committed dice and your damage lands before their follow-up.</li>
-            <li><strong>Dodge</strong>: Same as the Attacker version.</li>
-          </ul>
+        <h4>Defender Maneuvers</h4>
+        <ul>
+          <li>
+            <strong>Parry</strong>: Roll your committed dice to block or divert
+            the blow. Each success cancels <strong>two</strong> attacker
+            successes. Against a <strong>feint</strong>, your parry whiffs
+            unsuccessfully (move the dice to spent without rolling).
+          </li>
+          <li>
+            <strong>Counter</strong>: Launch an attack into the attacker. If
+            they <strong>feinted</strong>, you attack with your committed dice
+            and your damage lands before their follow-up.
+          </li>
+          <li><strong>Dodge</strong>: Same as the Attacker version.</li>
+        </ul>
 
-          <h3>Damage</h3>
-          <p>Damage dealt = Successes + Weapon Bonus − Armor Bonus. You must have at least 1 success to deal damage.</p>
-          <p>When you take damage, remove dice in this order:</p>
-          <ol>
-            <li><strong>Committed</strong> (Dice currently in the exchange).</li>
-            <li><strong>Reserve</strong> (Dice you have left to use this round).</li>
-            <li><strong>Spent</strong> (Dice already used this round).</li>
-          </ol>
-          <blockquote><strong>Defeat:</strong> Once your total Hit Dice hits zero, you are defeated.</blockquote>
-        </div>
+        <h3>Damage</h3>
+        <p>
+          Damage dealt = Successes + Weapon Bonus − Armor Bonus. You must have
+          at least 1 success to deal damage.
+        </p>
+        <p>When you take damage, remove dice in this order:</p>
+        <ol>
+          <li><strong>Committed</strong> (Dice currently in the exchange).</li>
+          <li>
+            <strong>Reserve</strong> (Dice you have left to use this round).
+          </li>
+          <li><strong>Spent</strong> (Dice already used this round).</li>
+        </ol>
+        <blockquote>
+          <strong>Defeat:</strong> Once your total Hit Dice hits zero, you are
+          defeated.
+        </blockquote>
+      </div>
     </section>
 
     <main id="game-panel" class="hidden">
