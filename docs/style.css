@@ -1,6 +1,6 @@
 * {
   box-sizing: border-box;
-  user-select: none;
+  /* user-select: none; */
 }
 
 body {
@@ -157,7 +157,7 @@ main {
   color: #e6e6e6;
 }
 .rules-body {
-  user-select: none;
+  /* user-select: none; */
 }
 
 .settings-header {
