@@ -817,5 +817,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target === $("#settings-overlay"))
       $("#settings-overlay").classList.add("hidden");
   });
+  $("#toggle-rules").addEventListener("click", () => {
+    $("#rules-panel").classList.toggle("hidden");
+  });
+  $("#close-rules").addEventListener("click", () => {
+    $("#rules-panel").classList.add("hidden");
+  });
+
+  // Drag to reposition
+  (function () {
+    const panel = $("#rules-panel");
+    const handle = panel.querySelector(".settings-header");
+    let dragging = false, startX, startY, origLeft, origTop;
+    handle.addEventListener("mousedown", (e) => {
+      if (e.target.closest("button")) return;
+      const rect = panel.getBoundingClientRect();
+      panel.style.right = "auto";
+      panel.style.left = rect.left + "px";
+      panel.style.top = rect.top + "px";
+      startX = e.clientX;
+      startY = e.clientY;
+      origLeft = rect.left;
+      origTop = rect.top;
+      dragging = true;
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      panel.style.left = origLeft + (e.clientX - startX) + "px";
+      panel.style.top = origTop + (e.clientY - startY) + "px";
+    });
+    document.addEventListener("mouseup", () => { dragging = false; });
+  })();
   await newGame();
 });
